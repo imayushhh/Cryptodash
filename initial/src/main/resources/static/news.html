@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CryptoDash | Latest News</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Oswald:wght@600&display=swap" rel="stylesheet" />
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Top global navbar (reuse header from index) -->
+  <header>
+    <div class="top-nav">
+      <div class="top-nav-left">
+        <a href="index.html" class="top-logo">CryptoDash</a>
+        <nav class="top-menu">
+          <a href="index.html">Cryptocurrencies</a>
+          <a href="#">Exchanges</a>
+          <a href="#">Locations</a>
+        </nav>
+      </div>
+      <div class="top-nav-right">
+        <button class="ask-ai-pill" type="button">
+          <i class="bi bi-stars"></i>
+          <span>Ask AI</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="news-page-wrapper">
+    <div class="news-breadcrumb">
+      <span>CryptoDash News</span> 
+    </div>
+    <h1 class="news-title-main">Latest News</h1>
+
+    <div id="news-status" class="text-muted small mb-3">Loading latest crypto news...</div>
+
+    <div class="row g-4">
+      <!-- Left: All News -->
+      <div class="col-lg-8">
+        <h2 class="news-section-heading">All News</h2>
+
+        <!-- Dynamic news articles will be injected here -->
+        <div id="news-list"></div>
+        <div id="news-pagination" class="d-flex justify-content-between align-items-center mt-3 small text-muted"></div>
+      </div>
+
+      <!-- Right: Recommended Articles -->
+      <div class="col-lg-4">
+        <h2 class="news-sidebar-title">Recommended Articles</h2>
+
+        <!-- Dynamic recommended articles will be injected here -->
+        <div id="recommended-list"></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer reused from index -->
+  <footer class="footer mt-5 pt-4 pb-3">
+    <div class="container">
+      <div class="row">
+
+        <!-- Navigation -->
+        <div class="col-md-4 mb-3">
+          <h6>Navigate</h6>
+          <ul class="list-unstyled">
+            <li><a href="news.html" class="text-decoration-none">News</a></li>
+            <li><a href="currency.html" class="text-decoration-none">Currency Converter</a></li>
+          </ul>
+        </div>
+
+        <!-- Legal Links -->
+        <div class="col-md-4 mb-3">
+          <h6>Legal</h6>
+          <ul class="list-unstyled">
+            <li><a href="terms.html" class="text-decoration-none">Terms of Service</a></li>
+            <li><a href="privacy.html" class="text-decoration-none">Privacy Policy</a></li>
+            <li><a href="disclaimer.html" class="text-decoration-none">Disclaimer</a></li>
+          </ul>
+        </div>
+
+        <!-- Social + Contact -->
+        <div class="col-md-4 mb-3">
+          <h6>Connect</h6>
+          <a href="mailto:ayush.ag3465@gmail.com" class="me-3" title="Email Us"><i class="bi bi-envelope" style="font-size: 1.2rem;"></i></a>
+          <a href="#" class="me-3" title="Github"><i class="bi bi-github"></i></a>
+          <a href="#" class="me-3" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
+        </div>
+
+      </div>
+      <hr class="border-secondary" />
+      <p class="text-center small mb-0">&copy; 2025 CryptoDash. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Shared global market cap logic (no-op if card not present) -->
+  <script src="global-metrics.js"></script>
+  <script>
+    const newsStatusEl = document.getElementById('news-status');
+    const newsListEl = document.getElementById('news-list');
+    const recommendedListEl = document.getElementById('recommended-list');
+    const newsPaginationEl = document.getElementById('news-pagination');
+
+    let allArticles = [];
+    let currentNewsPage = 1;
+    const NEWS_PAGE_SIZE = 10;
+
+    function timeAgo(isoString) {
+      if (!isoString) return '';
+      const then = new Date(isoString).getTime();
+      if (!then) return '';
+      const now = Date.now();
+      const diffMs = Math.max(0, now - then);
+      const diffMinutes = Math.floor(diffMs / 60000);
+      if (diffMinutes < 1) return 'just now';
+      if (diffMinutes < 60) return diffMinutes + ' minutes ago';
+      const diffHours = Math.floor(diffMinutes / 60);
+      return diffHours + ' hours ago';
+    }
+
+    function createNewsCard(article) {
+      const articleEl = document.createElement('article');
+      articleEl.className = 'news-card-lg';
+
+      const imageUrl = article.imageUrl || 'https://via.placeholder.com/300x180?text=Crypto+News';
+
+      const img = document.createElement('img');
+      img.src = imageUrl;
+      img.alt = article.title || 'Crypto news';
+
+      const bodyDiv = document.createElement('div');
+
+      const pill = document.createElement('div');
+      pill.className = 'news-pill';
+      pill.textContent = article.sourceName || 'Crypto News';
+
+      const titleLink = document.createElement('a');
+      titleLink.href = article.url || '#';
+      titleLink.target = '_blank';
+      titleLink.rel = 'noopener noreferrer';
+      titleLink.className = 'news-card-title';
+      titleLink.textContent = article.title || 'Untitled article';
+
+      const excerpt = document.createElement('p');
+      excerpt.className = 'news-card-excerpt';
+      excerpt.textContent = article.description || '';
+
+      const meta = document.createElement('div');
+      meta.className = 'news-card-meta';
+      const timeText = timeAgo(article.publishedAt);
+      const author = article.author && article.author.trim().length > 0 ? article.author : (article.sourceName || 'Unknown');
+      meta.textContent = (timeText ? timeText + ' · ' : '') + 'by ' + author;
+
+      bodyDiv.appendChild(pill);
+      bodyDiv.appendChild(titleLink);
+      if (excerpt.textContent) {
+        bodyDiv.appendChild(excerpt);
+      }
+      bodyDiv.appendChild(meta);
+
+      articleEl.appendChild(img);
+      articleEl.appendChild(bodyDiv);
+
+      return articleEl;
+    }
+
+    function createRecommendedCard(article) {
+      const card = document.createElement('div');
+      card.className = 'news-rec-card';
+
+      const imageUrl = article.imageUrl || 'https://via.placeholder.com/80x80?text=News';
+
+      const img = document.createElement('img');
+      img.src = imageUrl;
+      img.alt = article.title || 'Crypto news';
+
+      const bodyDiv = document.createElement('div');
+
+      const titleLink = document.createElement('a');
+      titleLink.href = article.url || '#';
+      titleLink.target = '_blank';
+      titleLink.rel = 'noopener noreferrer';
+      titleLink.className = 'news-rec-title';
+      titleLink.textContent = article.title || 'Untitled article';
+
+      const meta = document.createElement('div');
+      meta.className = 'news-rec-meta';
+      meta.textContent = timeAgo(article.publishedAt);
+
+      bodyDiv.appendChild(titleLink);
+      bodyDiv.appendChild(meta);
+
+      card.appendChild(img);
+      card.appendChild(bodyDiv);
+
+      return card;
+    }
+
+    function renderNewsPage() {
+      if (!Array.isArray(allArticles) || allArticles.length === 0) {
+        newsListEl.innerHTML = '';
+        newsPaginationEl.textContent = '';
+        return;
+      }
+
+      const total = allArticles.length;
+      const totalPages = Math.max(1, Math.ceil(total / NEWS_PAGE_SIZE));
+      if (currentNewsPage < 1) currentNewsPage = 1;
+      if (currentNewsPage > totalPages) currentNewsPage = totalPages;
+
+      const startIndex = (currentNewsPage - 1) * NEWS_PAGE_SIZE;
+      const endIndex = Math.min(startIndex + NEWS_PAGE_SIZE, total);
+
+      newsListEl.innerHTML = '';
+      allArticles.slice(startIndex, endIndex).forEach(article => {
+        newsListEl.appendChild(createNewsCard(article));
+      });
+
+      const infoText = `Showing ${startIndex + 1}-${endIndex} of ${total}`;
+
+      const prevBtn = document.createElement('button');
+      prevBtn.type = 'button';
+      prevBtn.className = 'btn btn-outline-secondary btn-sm';
+      prevBtn.textContent = 'Prev';
+      prevBtn.disabled = currentNewsPage === 1;
+      prevBtn.onclick = () => {
+        if (currentNewsPage > 1) {
+          currentNewsPage--;
+          renderNewsPage();
+        }
+      };
+
+      const nextBtn = document.createElement('button');
+      nextBtn.type = 'button';
+      nextBtn.className = 'btn btn-outline-secondary btn-sm';
+      nextBtn.textContent = 'Next';
+      nextBtn.disabled = currentNewsPage === totalPages;
+      nextBtn.onclick = () => {
+        if (currentNewsPage < totalPages) {
+          currentNewsPage++;
+          renderNewsPage();
+        }
+      };
+
+      newsPaginationEl.innerHTML = '';
+      const infoSpan = document.createElement('span');
+      infoSpan.textContent = infoText;
+      newsPaginationEl.appendChild(infoSpan);
+
+      const btnGroup = document.createElement('div');
+      btnGroup.appendChild(prevBtn);
+      btnGroup.appendChild(nextBtn);
+      newsPaginationEl.appendChild(btnGroup);
+    }
+
+    async function loadNews() {
+      try {
+        newsStatusEl.textContent = 'Loading latest crypto news...';
+        const response = await fetch('/api/news');
+        if (!response.ok) {
+          throw new Error('Failed to fetch news');
+        }
+
+        const articles = await response.json();
+        if (!Array.isArray(articles) || articles.length === 0) {
+          newsStatusEl.textContent = 'No news available for the last 48 hours.';
+          newsListEl.innerHTML = '';
+          recommendedListEl.innerHTML = '';
+          return;
+        }
+
+        newsStatusEl.textContent = '';
+
+        // Sort by latest first just to be sure
+        allArticles = articles.slice().sort((a, b) => {
+          const at = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+          const bt = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+          return bt - at;
+        });
+        currentNewsPage = 1;
+        renderNewsPage();
+
+        // Pick more "interesting" recommended articles:
+        // - must have an image
+        // - prefer longer descriptions
+        // - prefer more recent within the last 48h
+        // - avoid repeating the same source when possible
+        const withScores = allArticles
+          .filter(a => a.imageUrl && a.imageUrl.trim().length > 0)
+          .map(a => {
+            const descLen = (a.description || '').length;
+            const publishedTime = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+            const ageMinutes = publishedTime ? (Date.now() - publishedTime) / 60000 : 2880;
+            const recencyScore = Math.max(0, 2880 - ageMinutes); // newer = higher
+            const lengthScore = Math.min(descLen, 300); // cap so long articles don't dominate
+            const score = recencyScore * 2 + lengthScore; // weight recency a bit more
+            return { article: a, score };
+          })
+          .sort((a, b) => b.score - a.score)
+          .map(x => x.article);
+
+        const recommended = [];
+        const usedSources = new Set();
+
+        for (const a of withScores) {
+          const sourceKey = (a.sourceName || '').toLowerCase();
+          if (sourceKey && usedSources.has(sourceKey)) {
+            continue; // try to keep sources diverse
+          }
+          recommended.push(a);
+          if (sourceKey) {
+            usedSources.add(sourceKey);
+          }
+          if (recommended.length === 4) {
+            break;
+          }
+        }
+
+        // Fallback: if we still don't have 4, just fill with any remaining articles with images
+        if (recommended.length < 4) {
+          const needed = 4 - recommended.length;
+          const extra = allArticles
+            .filter(a => a.imageUrl && a.imageUrl.trim().length > 0 && !recommended.includes(a))
+            .slice(0, needed);
+          recommended.push(...extra);
+        }
+
+        recommendedListEl.innerHTML = '';
+        recommended.forEach(article => {
+          recommendedListEl.appendChild(createRecommendedCard(article));
+        });
+      } catch (error) {
+        newsStatusEl.textContent = 'Failed to load news. Please try again later.';
+        newsListEl.innerHTML = '';
+        recommendedListEl.innerHTML = '';
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', loadNews);
+  </script>
+</body>
+</html>

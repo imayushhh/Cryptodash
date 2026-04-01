@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CryptoDash | Currency Converter</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Oswald:wght@600&display=swap" rel="stylesheet" />
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Shared top navbar -->
+  <header>
+    <div class="top-nav">
+      <div class="top-nav-left">
+        <a href="index.html" class="top-logo">CryptoDash</a>
+        <nav class="top-menu">
+          <a href="index.html">Cryptocurrencies</a>
+          <a href="#">Exchanges</a>
+          <a href="#">Locations</a>
+        </nav>
+      </div>
+      <div class="top-nav-right">
+        <button class="ask-ai-pill" type="button">
+          <i class="bi bi-stars"></i>
+          <span>Ask AI</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="converter-page-wrapper">
+    <h1 class="converter-title">Cryptocurrency Converter Calculator</h1>
+    <p class="converter-subtitle">
+      Check the latest cryptocurrency prices against all global currencies. CryptoDash's converter lets you see how much your crypto is
+      worth in your preferred fiat currency.
+    </p>
+
+    <!-- Converter Card -->
+    <section class="converter-card">
+      <div class="row g-3 align-items-end">
+        <div class="col-md-4">
+          <label for="amountInput" class="form-label">Enter Amount</label>
+          <input type="number" id="amountInput" class="form-control" value="1.00" min="0" step="0.00000001" />
+        </div>
+
+        <div class="col-md-4">
+          <label for="coinSelect" class="form-label">Select Coin</label>
+          <select id="coinSelect" class="form-select">
+            <!-- Filled via JS -->
+          </select>
+        </div>
+
+        <div class="col-md-4">
+          <label for="fiatSelect" class="form-label">Select Currency</label>
+          <select id="fiatSelect" class="form-select">
+            <option value="usd" selected>US Dollar (USD)</option>
+            <option value="eur">Euro (EUR)</option>
+            <option value="gbp">British Pound (GBP)</option>
+            <option value="inr">Indian Rupee (INR)</option>
+            <option value="jpy">Japanese Yen (JPY)</option>
+            <option value="cad">Canadian Dollar (CAD)</option>
+            <option value="php">Philippine Peso (PHP)</option>
+            <option value="ngn">Nigerian Naira (NGN)</option>
+            <option value="myr">Malaysian Ringgit (MYR)</option>
+            <option value="zar">South African Rand (ZAR)</option>
+            <option value="sgd">Singapore Dollar (SGD)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="converter-result mt-4">
+        <div id="converterResultMain" class="converter-result-main">1.00000000 BTC = $ --</div>
+        <div id="converterUpdated" class="converter-result-meta">Last updated at --</div>
+      </div>
+    </section>
+
+    <!-- Popular Pairs -->
+    <section class="converter-section">
+      <h2 class="converter-section-title">Popular Cryptocurrency Pairs</h2>
+      <div class="row row-cols-2 row-cols-md-4 g-2">
+        <div class="col">
+          <a href="#" class="converter-link">BTC to USD</a>
+          <a href="#" class="converter-link">ETH to USD</a>
+          <a href="#" class="converter-link">BNB to USD</a>
+          <a href="#" class="converter-link">XRP to USD</a>
+          <a href="#" class="converter-link">SOL to USD</a>
+          <a href="#" class="converter-link">TRX to USD</a>
+        </div>
+        <div class="col">
+          <a href="#" class="converter-link">BTC to GBP</a>
+          <a href="#" class="converter-link">ETH to GBP</a>
+          <a href="#" class="converter-link">BNB to GBP</a>
+          <a href="#" class="converter-link">XRP to GBP</a>
+          <a href="#" class="converter-link">SOL to GBP</a>
+          <a href="#" class="converter-link">TRX to GBP</a>
+        </div>
+        <div class="col">
+          <a href="#" class="converter-link">BTC to INR</a>
+          <a href="#" class="converter-link">ETH to INR</a>
+          <a href="#" class="converter-link">BNB to INR</a>
+          <a href="#" class="converter-link">XRP to INR</a>
+          <a href="#" class="converter-link">SOL to INR</a>
+          <a href="#" class="converter-link">TRX to INR</a>
+        </div>
+        <div class="col">
+          <a href="#" class="converter-link">BTC to PHP</a>
+          <a href="#" class="converter-link">ETH to PHP</a>
+          <a href="#" class="converter-link">BNB to PHP</a>
+          <a href="#" class="converter-link">XRP to PHP</a>
+          <a href="#" class="converter-link">SOL to PHP</a>
+          <a href="#" class="converter-link">TRX to PHP</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- Crypto prices in popular currencies -->
+    <section class="converter-section">
+      <h2 class="converter-section-title">Crypto Prices in Popular Currencies</h2>
+
+      <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <p class="mb-0 small text-white">Quick view of how a coin trades across popular currencies.</p>
+        <div class="d-flex align-items-center gap-2">
+          <span class="small text-white text-nowrap">Base coin:</span>
+          <select id="popularBaseSelect" class="form-select form-select-sm popular-base-select">
+            <option value="BTC">Bitcoin (BTC)</option>
+            <option value="ETH">Ethereum (ETH)</option>
+            <option value="SOL">Solana (SOL)</option>
+            <option value="XRP">XRP</option>
+            <option value="AVAX">Avalanche (AVAX)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row row-cols-2 row-cols-md-4 g-3">
+        <div class="col">
+          <div class="card popular-price-card" data-fiat="usd">
+            <div class="card-body p-3">
+              <div class="popular-price-label">Crypto Price (USD)</div>
+              <div class="popular-price-main" id="popularPrice-usd">--</div>
+              <div class="popular-price-meta" id="popularPriceMeta-usd">Loading...</div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card popular-price-card" data-fiat="ngn">
+            <div class="card-body p-3">
+              <div class="popular-price-label">Crypto Price (NGN)</div>
+              <div class="popular-price-main" id="popularPrice-ngn">--</div>
+              <div class="popular-price-meta" id="popularPriceMeta-ngn">Loading...</div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card popular-price-card" data-fiat="cad">
+            <div class="card-body p-3">
+              <div class="popular-price-label">Crypto Price (CAD)</div>
+              <div class="popular-price-main" id="popularPrice-cad">--</div>
+              <div class="popular-price-meta" id="popularPriceMeta-cad">Loading...</div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card popular-price-card" data-fiat="myr">
+            <div class="card-body p-3">
+              <div class="popular-price-label">Crypto Price (MYR)</div>
+              <div class="popular-price-main" id="popularPrice-myr">--</div>
+              <div class="popular-price-meta" id="popularPriceMeta-myr">Loading...</div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card popular-price-card" data-fiat="gbp">
+            <div class="card-body p-3">
+              <div class="popular-price-label">Crypto Price (GBP)</div>
+              <div class="popular-price-main" id="popularPrice-gbp">--</div>
+              <div class="popular-price-meta" id="popularPriceMeta-gbp">Loading...</div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card popular-price-card" data-fiat="zar">
+            <div class="card-body p-3">
+              <div class="popular-price-label">Crypto Price (ZAR)</div>
+              <div class="popular-price-main" id="popularPrice-zar">--</div>
+              <div class="popular-price-meta" id="popularPriceMeta-zar">Loading...</div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card popular-price-card" data-fiat="inr">
+            <div class="card-body p-3">
+              <div class="popular-price-label">Crypto Price (INR)</div>
+              <div class="popular-price-main" id="popularPrice-inr">--</div>
+              <div class="popular-price-meta" id="popularPriceMeta-inr">Loading...</div>
+            </div>
+          </div>
+        </div>
+        <div class="col">
+          <div class="card popular-price-card" data-fiat="sgd">
+            <div class="card-body p-3">
+              <div class="popular-price-label">Crypto Price (SGD)</div>
+              <div class="popular-price-main" id="popularPrice-sgd">--</div>
+              <div class="popular-price-meta" id="popularPriceMeta-sgd">Loading...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Shared footer -->
+  <footer class="footer mt-5 pt-4 pb-3">
+    <div class="container">
+      <div class="row">
+
+        <!-- Navigation -->
+        <div class="col-md-4 mb-3">
+          <h6>Navigate</h6>
+          <ul class="list-unstyled">
+            <li><a href="news.html" class="text-decoration-none">News</a></li>
+            <li><a href="currency.html" class="text-decoration-none">Currency Converter</a></li>
+          </ul>
+        </div>
+
+        <!-- Legal Links -->
+        <div class="col-md-4 mb-3">
+          <h6>Legal</h6>
+          <ul class="list-unstyled">
+            <li><a href="terms.html" class="text-decoration-none">Terms of Service</a></li>
+            <li><a href="privacy.html" class="text-decoration-none">Privacy Policy</a></li>
+            <li><a href="disclaimer.html" class="text-decoration-none">Disclaimer</a></li>
+          </ul>
+        </div>
+
+        <!-- Social + Contact -->
+        <div class="col-md-4 mb-3">
+          <h6>Connect</h6>
+          <a href="mailto:ayush.ag3465@gmail.com" class="me-3" title="Email Us"><i class="bi bi-envelope" style="font-size: 1.2rem;"></i></a>
+          <a href="#" class="me-3" title="Github"><i class="bi bi-github"></i></a>
+          <a href="#" class="me-3" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
+        </div>
+
+      </div>
+      <hr class="border-secondary" />
+      <p class="text-center small mb-0">&copy; 2025 CryptoDash. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Shared global market cap logic (no-op if card not present) -->
+  <script src="global-metrics.js"></script>
+
+  <script>
+    let converterCoins = [];
+    let selectedFiat = 'usd';
+
+    let pendingPairSymbol = null;
+
+    // Base coin used for the "Crypto Prices in Popular Currencies" cards
+    let popularBaseSymbol = 'BTC';
+
+    const popularFiats = ['usd', 'ngn', 'cad', 'myr', 'gbp', 'zar', 'inr', 'sgd'];
+    let popularPriceTimeoutId = null;
+
+    async function loadConverterData() {
+      try {
+        const response = await fetch(`/api/crypto?currency=${selectedFiat}`);
+        if (!response.ok) throw new Error('API request failed');
+
+        const data = await response.json();
+        if (!Array.isArray(data) || data.length === 0) {
+          document.getElementById('converterResultMain').textContent = 'No data available right now.';
+          return;
+        }
+
+        converterCoins = data;
+        populateCoinSelect(pendingPairSymbol);
+        pendingPairSymbol = null;
+        updateConversion();
+
+        const now = new Date();
+        document.getElementById('converterUpdated').textContent = `Last updated at ${now.toLocaleTimeString()}`;
+      } catch (err) {
+        console.error('Error loading converter data', err);
+        document.getElementById('converterResultMain').textContent = 'Failed to load prices. Please try again later.';
+      }
+    }
+
+    function populateCoinSelect(preferredSymbol) {
+      const select = document.getElementById('coinSelect');
+      const previousIndex = select.value !== '' ? parseInt(select.value, 10) : 0;
+      select.innerHTML = '';
+
+      let preferredIndex = -1;
+
+      converterCoins.forEach((coin, index) => {
+        const option = document.createElement('option');
+        option.value = index.toString();
+        option.textContent = `${coin.name} (${coin.symbol.toUpperCase()})`;
+        select.appendChild(option);
+
+        if (preferredSymbol && coin.symbol.toUpperCase() === preferredSymbol.toUpperCase()) {
+          preferredIndex = index;
+        }
+      });
+
+      if (converterCoins.length === 0) {
+        return;
+      }
+
+      let indexToSelect = 0;
+      if (preferredIndex >= 0) {
+        indexToSelect = preferredIndex;
+      } else if (!Number.isNaN(previousIndex) && previousIndex >= 0 && previousIndex < converterCoins.length) {
+        indexToSelect = previousIndex;
+      }
+
+      select.value = indexToSelect.toString();
+    }
+
+    function updateConversion() {
+      const amountInput = document.getElementById('amountInput');
+      const coinSelect = document.getElementById('coinSelect');
+      const resultMain = document.getElementById('converterResultMain');
+
+      const amount = parseFloat(amountInput.value) || 0;
+      const index = parseInt(coinSelect.value, 10) || 0;
+      const coin = converterCoins[index];
+
+      if (!coin || amount <= 0) {
+        resultMain.textContent = 'Enter an amount greater than 0 to see the conversion.';
+        return;
+      }
+
+      const price = coin.current_price || 0;
+      const total = amount * price;
+
+      const formatter = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: selectedFiat.toUpperCase(),
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 8
+      });
+
+      const amountFormatted = amount.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 8
+      });
+
+      resultMain.textContent = `${amountFormatted} ${coin.symbol.toUpperCase()} = ${formatter.format(total)}`;
+    }
+
+    function ensureFiatOptionExists(fiatCode) {
+      const fiatSelect = document.getElementById('fiatSelect');
+      const existing = Array.from(fiatSelect.options).find(opt => opt.value === fiatCode);
+      if (existing) {
+        return;
+      }
+
+      const option = document.createElement('option');
+      option.value = fiatCode;
+      option.textContent = fiatCode.toUpperCase();
+      fiatSelect.appendChild(option);
+    }
+
+    function handlePairSelection(symbol, fiat) {
+      if (fiat) {
+        const normalizedFiat = fiat.toLowerCase();
+        selectedFiat = normalizedFiat;
+        ensureFiatOptionExists(normalizedFiat);
+        const fiatSelect = document.getElementById('fiatSelect');
+        fiatSelect.value = normalizedFiat;
+      }
+
+      pendingPairSymbol = symbol ? symbol.toUpperCase() : null;
+      loadConverterData();
+    }
+
+    function resetPopularPriceCards(message) {
+      const cards = document.querySelectorAll('.popular-price-card');
+      cards.forEach(card => {
+        const fiat = card.getAttribute('data-fiat');
+        const mainEl = document.getElementById(`popularPrice-${fiat}`);
+        const metaEl = document.getElementById(`popularPriceMeta-${fiat}`);
+        if (mainEl) mainEl.textContent = '--';
+        if (metaEl) metaEl.textContent = message || '';
+      });
+    }
+
+    async function loadPopularPrices() {
+      const amount = parseFloat(document.getElementById('amountInput').value) || 0;
+      const baseSelect = document.getElementById('popularBaseSelect');
+      const symbol = baseSelect && baseSelect.value
+        ? baseSelect.value.toUpperCase()
+        : (popularBaseSymbol || 'BTC');
+
+      if (!symbol || amount <= 0) {
+        resetPopularPriceCards('Set an amount to see prices');
+        return;
+      }
+
+      resetPopularPriceCards('Loading...');
+
+      await Promise.all(popularFiats.map(async (fiat) => {
+        try {
+          const resp = await fetch(`/api/crypto?currency=${fiat}`);
+          if (!resp.ok) throw new Error('API error');
+          const list = await resp.json();
+          const match = Array.isArray(list)
+            ? list.find(c => (c.symbol || '').toUpperCase() === symbol)
+            : null;
+
+          const mainEl = document.getElementById(`popularPrice-${fiat}`);
+          const metaEl = document.getElementById(`popularPriceMeta-${fiat}`);
+          if (!mainEl || !metaEl) return;
+
+          if (!match || !match.current_price) {
+            mainEl.textContent = '--';
+            metaEl.textContent = 'No data';
+            return;
+          }
+
+          const total = amount * match.current_price;
+          const formatter = new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: fiat.toUpperCase(),
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+          });
+
+          const amountStr = amount.toLocaleString(undefined, { maximumFractionDigits: 8 });
+          mainEl.textContent = formatter.format(total);
+          metaEl.textContent = `${amountStr} ${symbol}`;
+        } catch (e) {
+          const mainEl = document.getElementById(`popularPrice-${fiat}`);
+          const metaEl = document.getElementById(`popularPriceMeta-${fiat}`);
+          if (mainEl) mainEl.textContent = '--';
+          if (metaEl) metaEl.textContent = 'Error loading';
+        }
+      }));
+    }
+
+    function schedulePopularPriceUpdate() {
+      if (popularPriceTimeoutId) {
+        clearTimeout(popularPriceTimeoutId);
+      }
+      popularPriceTimeoutId = setTimeout(loadPopularPrices, 500);
+    }
+
+    function setupConverterQuickLinks() {
+      const links = document.querySelectorAll('.converter-section .converter-link');
+
+      links.forEach(link => {
+        const raw = link.textContent.trim();
+
+        if (/to/i.test(raw)) {
+          // e.g. "BTC to USD"
+          link.addEventListener('click', (event) => {
+            event.preventDefault();
+            const parts = raw.split(' to ');
+            if (parts.length !== 2) return;
+            const symbol = parts[0].trim().split(' ')[0];
+            const fiat = parts[1].trim();
+            if (!symbol || !fiat) return;
+            handlePairSelection(symbol, fiat.toLowerCase());
+          });
+        } else if (/Crypto Price/i.test(raw)) {
+          // e.g. "Crypto Price NGN"
+          link.addEventListener('click', (event) => {
+            event.preventDefault();
+            const pieces = raw.split(' ');
+            const fiat = pieces[pieces.length - 1].trim().toLowerCase();
+            if (!fiat) return;
+            handlePairSelection(null, fiat);
+          });
+        }
+      });
+    }
+
+    document.getElementById('amountInput').addEventListener('input', () => {
+      updateConversion();
+      schedulePopularPriceUpdate();
+    });
+
+    document.getElementById('coinSelect').addEventListener('change', () => {
+      updateConversion();
+      schedulePopularPriceUpdate();
+    });
+    document.getElementById('fiatSelect').addEventListener('change', (event) => {
+      selectedFiat = event.target.value;
+      loadConverterData();
+    });
+
+    const popularBaseSelect = document.getElementById('popularBaseSelect');
+    if (popularBaseSelect) {
+      popularBaseSelect.addEventListener('change', (event) => {
+        popularBaseSymbol = (event.target.value || 'BTC').toUpperCase();
+        schedulePopularPriceUpdate();
+      });
+    }
+
+    setupConverterQuickLinks();
+
+    // Initial load
+    loadConverterData();
+    schedulePopularPriceUpdate();
+  </script>
+</body>
+</html>

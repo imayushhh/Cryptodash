@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CryptoDash | Cryptocurrencies</title>
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Oswald:wght@600&display=swap" rel="stylesheet" />
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Top global navbar -->
+  <header>
+    <div class="top-nav">
+      <div class="top-nav-left">
+        <a href="index.html" class="top-logo">CryptoDash</a>
+        <nav class="top-menu">
+          <a href="index.html" class="active">Cryptocurrencies</a>
+          <a href="#">Exchanges</a>
+          <a href="#">Locations</a>
+        </nav>
+      </div>
+      <div class="top-nav-right">
+        <button class="ask-ai-pill" type="button">
+          <i class="bi bi-stars"></i>
+          <span>Ask AI</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Secondary tabs under Cryptocurrencies -->
+    <div class="secondary-tabs-wrapper">
+      <div class="secondary-tabs">
+        <button id="tab-top" class="active" type="button" onclick="switchTab('top')">Top</button>
+        <button id="tab-trending" type="button" onclick="switchTab('trending')">Trending</button>
+        <button id="tab-watchlist" type="button" onclick="switchTab('watchlist')">Watchlist</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div id="main-content">
+
+    <!-- Moving Tagline -->
+    <div class="tagline-wrapper">
+      <div class="tagline-inner">
+        <span class="moving-text">Track It. Trade It. Own It.</span>
+      </div>
+    </div>
+
+    <!-- Dashboard Section -->
+    <div class="container mt-4">
+
+      <!-- Top summary metrics -->
+      <div class="metrics-row">
+        <div class="metric-card">
+          <div class="metric-label">Market Cap</div>
+          <div class="metric-value" id="marketCapValue">$2.32T</div>
+          <div class="metric-sub" id="marketCapChange">+1.19%</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-label">Fear &amp; Greed</div>
+          <div class="metric-value" id="fearGreedValue">--</div>
+          <div class="metric-sub" id="fearGreedLabel">Loading...</div>
+        </div>
+          <div class="metric-card">
+            <div class="metric-label">Avg Market Cap Change</div>
+            <div class="metric-value" id="avgMarketCapChange">--</div>
+            <div class="metric-sub" id="avgMarketCapChangeLabel">Average</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-label">Avg Price Change</div>
+            <div class="metric-value" id="avgPriceChange">--</div>
+  		  <div class="metric-sub" id="avgPriceChangeLabel">Average</div>
+          </div>
+      </div>
+
+      <!-- Supply snapshot cards (circulating & total supply for key coins) -->
+      <div class="mt-3">
+        <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
+          <h5 class="mb-0" style="color: #f9fafb;">Supply Snapshot</h5>
+        </div>
+        <div class="metrics-row supply-row" id="supplyCardsRow">
+          <!-- Filled via JS -->
+        </div>
+      </div>
+
+      <!-- Top / Trending table view -->
+      <div id="topTrendingSection" class="table-responsive mt-3 table-wrap-card">
+        <table class="table table-striped table-hover align-middle">
+          <thead>
+            <tr>
+              <th>Coin</th>
+            <th>
+            <label for="currencySelect" class="form-label mb-0">Price</label>
+                <select id="currencySelect" class="form-select form-select-sm d-inline-block ms-1 w-auto" onchange="changeCurrency(this.value)">
+                <option value="usd" selected>USD</option>
+                <option value="eur">EUR</option>
+                <option value="inr">INR</option>
+                <option value="gbp">GBP</option>
+                <option value="jpy">JPY</option>
+                <option value="cad">CAD</option>
+            </select>
+            </th> 
+              <th>24h Change</th>
+              <th>ATH</th>
+            </tr>
+          </thead>
+          <tbody id="cryptoTableBody">
+            <!-- Filled via JS -->
+          </tbody>
+        </table>
+        <div class="mt-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+          <small id="lastUpdated">Last Updated: --</small>
+          <div class="d-flex align-items-center gap-2">
+            <small id="tableRangeInfo">Showing --</small>
+            <nav>
+              <ul class="pagination pagination-sm mb-0">
+                <li class="page-item disabled" id="prevPageItem">
+                  <button class="page-link" type="button" onclick="changePage(-1)">Prev</button>
+                </li>
+                <li class="page-item disabled">
+                  <span class="page-link" id="pageInfo">1 / 1</span>
+                </li>
+                <li class="page-item disabled" id="nextPageItem">
+                  <button class="page-link" type="button" onclick="changePage(1)">Next</button>
+                </li>
+              </ul>
+            </nav>
+          </div>
+        </div>
+      </div>
+
+      <!-- Watchlist layout (separate view) -->
+      <div id="watchlistSection" class="mt-4" style="display: none;">
+        <div class="table-wrap-card py-4">
+          <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div>
+              <h4 class="mb-1" style="color: #000000;">Your Watchlist</h4>
+              <p class="mb-0 text-muted">Star coins in Top or Trending to add them here.</p>
+            </div>
+            <button id="watchlistResetButton" class="btn btn-outline-secondary btn-sm" type="button" onclick="clearWatchlist()" disabled>
+              Reset
+            </button>
+          </div>
+
+          <div id="watchlistEmptyState" class="text-center py-4 text-muted">
+            <div class="mb-3" style="font-size: 2rem;">
+              <i class="bi bi-star-fill" style="color: #fbbf24;"></i>
+            </div>
+            <p class="mb-0">No coins in your watchlist yet.</p>
+          </div>
+
+          <div id="watchlistItems" class="d-flex flex-wrap gap-2"></div>
+        </div>
+      </div>
+    </div>
+<footer class="footer mt-5 pt-4 pb-3">
+  <div class="container">
+    <div class="row">
+
+      <!-- Navigation -->
+      <div class="col-md-4 mb-3">
+        <h6>Navigate</h6>
+        <ul class="list-unstyled">
+          <li><a href="news.html" class="text-decoration-none">News</a></li>
+          <li><a href="currency.html" class="text-decoration-none">Currency Converter</a></li>
+        </ul>
+      </div>
+
+      <!-- Legal Links -->
+      <div class="col-md-4 mb-3">
+        <h6>Legal</h6>
+        <ul class="list-unstyled">
+          <li><a href="privacy.html" class="text-decoration-none">Privacy Policy</a></li>
+          <li><a href="disclaimer.html" class="text-decoration-none">Disclaimer</a></li>
+        </ul>
+      </div>
+
+      <div class="col-md-4 mb-3">
+        <h6>Connect</h6>
+        <a href="mailto:ayush.ag3465@gmail.com" class="me-3" title="Email Us"><i class="bi bi-envelope" style="font-size: 1.2rem;"></i></a>        
+         <a href="#" class="me-3" title="Github"><i class="bi bi-github"></i></a>
+        <a href="#" class="me-3" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
+      </div>
+
+    </div>
+    <hr class="border-secondary" />
+    <p class="text-center small mb-0">&copy; 2025 CryptoDash. All rights reserved.</p>
+  </div>
+</footer>
+
+  </div>
+  
+
+  <!-- Bootstrap JS -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <!-- Shared global market cap logic -->
+  <script src="global-metrics.js"></script>
+
+  <!-- Crypto Fetching -->
+  <script>
+ let selectedCurrency = "usd"; // Default currency
+ let currentTab = "top";      // 'top', 'trending', or 'watchlist'
+ const PAGE_SIZE = 25;         // rows per page (table)
+ let currentPage = 1;          // current pagination page
+
+ const WATCHLIST_STORAGE_KEY = "cryptoWatchlist";
+ let watchlist = loadWatchlistFromStorage();
+ let watchlistSet = new Set(watchlist.map(item => (item.symbol || "").toUpperCase()));
+ let latestCryptoBySymbol = {};
+ let latestCryptoList = [];
+
+ // Fixed set of well-known coins to display in the Supply Snapshot
+ // (explicitly includes Avalanche instead of FIGURE HELOC, etc.)
+ const SUPPLY_SNAPSHOT_SYMBOLS = [
+   "BTC",  // Bitcoin
+   "ETH",  // Ethereum
+   "USDT", // Tether
+   "BNB",  // BNB
+   "XRP",  // XRP
+   "USDC", // USD Coin
+   "SOL",  // Solana
+   "TRX",  // TRON
+   "AVAX", // Avalanche
+   "DOGE", // Dogecoin
+   "ADA",  // Cardano
+   "DOT",  // Polkadot
+   "LINK", // Chainlink
+   "SHIB"  // Shiba Inu
+ ];
+
+ function switchTab(tab) {
+  currentTab = tab;
+
+  // Update active tab button styles
+  ["top", "trending", "watchlist"].forEach(name => {
+    const btn = document.getElementById(`tab-${name}`);
+    if (btn) {
+      btn.classList.toggle("active", name === tab);
+    }
+  });
+
+  // Toggle sections
+  const topTrending = document.getElementById("topTrendingSection");
+  const watchlist = document.getElementById("watchlistSection");
+  if (topTrending && watchlist) {
+    if (tab === "watchlist") {
+      topTrending.style.display = "none";
+      watchlist.style.display = "block";
+    } else {
+      topTrending.style.display = "block";
+      watchlist.style.display = "none";
+    }
+  }
+
+  // Refresh data when switching back to Top/Trending
+  if (tab === "top" || tab === "trending") {
+    currentPage = 1;
+    fetchCryptoData();
+  }
+ }
+
+ function loadWatchlistFromStorage() {
+  try {
+    const raw = localStorage.getItem(WATCHLIST_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch (e) {
+    console.error("Failed to load watchlist from storage", e);
+    return [];
+  }
+ }
+
+ function saveWatchlistToStorage() {
+  try {
+    localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(watchlist));
+  } catch (e) {
+    console.error("Failed to save watchlist to storage", e);
+  }
+ }
+
+ function isInWatchlist(symbol) {
+  return watchlistSet.has(symbol);
+ }
+
+ function toggleWatchlistCoin(coin) {
+  const symbol = coin.symbol;
+  if (!symbol) return;
+
+  if (watchlistSet.has(symbol)) {
+    watchlist = watchlist.filter(item => item.symbol !== symbol);
+    watchlistSet.delete(symbol);
+  } else {
+    watchlist.push({
+      symbol: coin.symbol,
+      name: coin.name,
+      image: coin.image
+    });
+    watchlistSet.add(symbol);
+  }
+
+  saveWatchlistToStorage();
+  updateWatchlistView();
+ }
+
+ function clearWatchlist() {
+  watchlist = [];
+  watchlistSet = new Set();
+  saveWatchlistToStorage();
+  updateWatchlistView();
+  fetchCryptoData();
+ }
+
+ function updateWatchlistView() {
+  const itemsContainer = document.getElementById("watchlistItems");
+  const emptyState = document.getElementById("watchlistEmptyState");
+  const resetButton = document.getElementById("watchlistResetButton");
+
+  if (!itemsContainer || !emptyState || !resetButton) return;
+
+  itemsContainer.innerHTML = "";
+
+  if (watchlist.length === 0) {
+    emptyState.style.display = "block";
+    resetButton.disabled = true;
+    return;
+  }
+
+  emptyState.style.display = "none";
+  resetButton.disabled = false;
+
+  watchlist.forEach(item => {
+    const symbolUpper = (item.symbol || "").toUpperCase();
+    const coinData = latestCryptoBySymbol[symbolUpper];
+
+    let priceDisplay = "--";
+    let changeDisplay = "";
+    let changeClass = "text-muted";
+
+    if (coinData) {
+      if (typeof coinData.current_price === "number") {
+        priceDisplay = formatPrice(coinData.current_price, selectedCurrency);
+      }
+
+      const change = typeof coinData.price_change_percentage_24h === "number"
+        ? coinData.price_change_percentage_24h
+        : null;
+
+      if (change !== null) {
+        changeDisplay = `${change >= 0 ? "+" : ""}${change.toFixed(2)}%`;
+        changeClass = change >= 0 ? "text-success" : "text-danger";
+      }
+    }
+
+    const subtitle = changeDisplay
+      ? `${priceDisplay} \
+<span class=\"mx-1\">•</span> ${changeDisplay}`
+      : priceDisplay;
+
+    const pill = document.createElement("button");
+    pill.type = "button";
+    pill.className = "btn btn-sm btn-dark rounded-pill d-flex align-items-center gap-2 watchlist-chip";
+    pill.setAttribute("data-symbol", symbolUpper);
+    pill.innerHTML = `
+      <img src="${item.image}" alt="${item.name}" style="width: 20px; height: 20px; border-radius: 50%;">
+      <div class="d-flex flex-column text-start">
+        <span>${item.name} (${symbolUpper})</span>
+        <small class="${changeClass}">${subtitle}</small>
+      </div>
+      <i class="bi bi-x-lg ms-2 small"></i>
+    `;
+    itemsContainer.appendChild(pill);
+  });
+ }
+
+ // Allow removing items by clicking on a pill
+ document.addEventListener("DOMContentLoaded", () => {
+  updateWatchlistView();
+
+  const watchlistItems = document.getElementById("watchlistItems");
+  if (watchlistItems) {
+    watchlistItems.addEventListener("click", (event) => {
+      const chip = event.target.closest(".watchlist-chip");
+      if (!chip) return;
+      const symbol = chip.getAttribute("data-symbol");
+      if (!symbol) return;
+
+      if (watchlistSet.has(symbol)) {
+        watchlist = watchlist.filter(item => item.symbol !== symbol);
+        watchlistSet.delete(symbol);
+        saveWatchlistToStorage();
+        updateWatchlistView();
+        fetchCryptoData();
+      }
+    });
+  }
+
+  // Enable starring/unstarring coins directly from the table
+  const cryptoTableBody = document.getElementById("cryptoTableBody");
+  if (cryptoTableBody) {
+    cryptoTableBody.addEventListener("click", (event) => {
+      const button = event.target.closest(".watchlist-toggle");
+      if (!button) return;
+
+      const coin = {
+        symbol: (button.getAttribute("data-symbol") || "").toUpperCase(),
+        name: button.getAttribute("data-name") || "",
+        image: button.getAttribute("data-image") || ""
+      };
+
+      toggleWatchlistCoin(coin);
+
+      const isStarredNow = isInWatchlist(coin.symbol);
+      button.classList.toggle("active", isStarredNow);
+      const icon = button.querySelector("i");
+      if (icon) {
+        icon.className = `bi ${isStarredNow ? "bi-star-fill" : "bi-star"}`;
+      }
+    });
+  }
+ });
+
+async function fetchCryptoData() {
+  const tableBody = document.getElementById("cryptoTableBody");
+
+  // Show loading state before fetch
+  tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">
+    Loading data...
+  </td></tr>`;
+
+  try {
+  
+    const response = await fetch(`/api/crypto?currency=${selectedCurrency}`);
+    if (!response.ok) throw new Error("API request failed");
+
+    let data = await response.json();
+
+    // Handle empty or invalid data
+    if (!Array.isArray(data) || data.length === 0) {
+      tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">
+        No data available. Please try again later.
+      </td></tr>`;
+      return;
+    }
+
+    // Build lookup map for latest prices/changes (for watchlist chips)
+    latestCryptoBySymbol = {};
+    data.forEach(coin => {
+      const sym = (coin.symbol || "").toUpperCase();
+      if (sym) {
+        latestCryptoBySymbol[sym] = coin;
+      }
+    });
+
+    // Keep full list around for supply snapshot cards
+    latestCryptoList = data;
+    supplyPageIndex = 0; // reset to first page on new data
+    updateSupplyCards();
+
+    // For Trending tab, sort a copy of the data by 24h change (desc)
+    let displayData = data;
+    if (currentTab === "trending") {
+      displayData = [...data].sort((a, b) => (b.price_change_percentage_24h || 0) - (a.price_change_percentage_24h || 0));
+    }
+
+    // Pagination setup
+    const totalItems = displayData.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / PAGE_SIZE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    if (currentPage < 1) currentPage = 1;
+
+    const startIndex = (currentPage - 1) * PAGE_SIZE;
+    const endIndex = Math.min(startIndex + PAGE_SIZE, totalItems);
+    const pageItems = displayData.slice(startIndex, endIndex);
+
+    // Compute averages across the full dataset
+    let sumPriceChange = 0;
+    let countPriceChange = 0;
+    let sumMarketCapChange = 0;
+    let countMarketCapChange = 0;
+
+    let sumPriceValue = 0;
+    let countPriceValue = 0;
+    let sumMarketCapValue = 0;
+    let countMarketCapValue = 0;
+
+    data.forEach(coin => {
+      const change = typeof coin.price_change_percentage_24h === "number"
+        ? coin.price_change_percentage_24h
+        : null;
+      const marketCapChange = typeof coin.market_cap_change_percentage_24h === "number"
+        ? coin.market_cap_change_percentage_24h
+        : null;
+
+      const priceValue = typeof coin.current_price === "number"
+        ? coin.current_price
+        : null;
+      const marketCapValue = typeof coin.market_cap === "number"
+        ? coin.market_cap
+        : null;
+
+      if (change !== null) {
+        sumPriceChange += change;
+        countPriceChange++;
+      }
+
+      if (marketCapChange !== null) {
+        sumMarketCapChange += marketCapChange;
+        countMarketCapChange++;
+      }
+
+      if (priceValue !== null) {
+        sumPriceValue += priceValue;
+        countPriceValue++;
+      }
+
+      if (marketCapValue !== null) {
+        sumMarketCapValue += marketCapValue;
+        countMarketCapValue++;
+      }
+    });
+
+    // Build table rows dynamically for the current page only
+    tableBody.innerHTML = "";
+    pageItems.forEach(coin => {
+      const change = typeof coin.price_change_percentage_24h === "number"
+        ? coin.price_change_percentage_24h
+        : null;
+      const changeClass = change !== null && change >= 0 ? "text-success" : "text-danger";
+      const changeText = change !== null
+        ? `${change.toFixed(2)}%`
+        : "--";
+
+      const athValue = typeof coin.ath === "number" && coin.ath > 0
+        ? formatPrice(coin.ath, selectedCurrency)
+        : "--";
+
+      const symbolUpper = (coin.symbol || "").toUpperCase();
+      const isStarred = isInWatchlist(symbolUpper);
+
+      const safeName = coin.name ? coin.name.replace(/"/g, "&quot;") : "";
+      const safeImage = coin.image ? coin.image.replace(/"/g, "&quot;") : "";
+
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>
+          <button
+            class="btn btn-sm btn-outline-warning me-2 watchlist-toggle ${isStarred ? "active" : ""}"
+            type="button"
+            data-symbol="${symbolUpper}"
+            data-name="${safeName}"
+            data-image="${safeImage}"
+          >
+            <i class="bi ${isStarred ? "bi-star-fill" : "bi-star"}"></i>
+          </button>
+          <img src="${coin.image}" alt="${coin.name} logo"
+               style="width: 28px; height: 28px; margin-right: 8px; vertical-align: middle; border-radius: 50%;">
+          ${coin.name} (${coin.symbol.toUpperCase()})
+        </td>
+        <td>${formatPrice(coin.current_price, selectedCurrency)}</td>
+        <td class="${changeClass}">
+          ${changeText}
+        </td>
+        <td>${athValue}</td>
+      `;
+      tableBody.appendChild(row);
+    });
+
+    const avgPriceEl = document.getElementById("avgPriceChange");
+    const avgPriceLabelEl = document.getElementById("avgPriceChangeLabel");
+    if (avgPriceEl) {
+      avgPriceEl.classList.remove("text-success", "text-danger");
+
+      if (countPriceValue > 0) {
+        const avgPrice = sumPriceValue / countPriceValue;
+        avgPriceEl.textContent = formatLargeCurrency(avgPrice, selectedCurrency);
+      } else {
+        avgPriceEl.textContent = "--";
+      }
+
+      if (avgPriceLabelEl && countPriceChange > 0) {
+        const avgChange = sumPriceChange / countPriceChange;
+        const formattedAvgChange = `${avgChange >= 0 ? "+" : ""}${avgChange.toFixed(2)}%`;
+        avgPriceLabelEl.textContent = formattedAvgChange;
+        avgPriceLabelEl.classList.remove("text-success", "text-danger");
+        avgPriceLabelEl.classList.add(avgChange >= 0 ? "text-success" : "text-danger");
+      }
+    }
+
+    const avgCapEl = document.getElementById("avgMarketCapChange");
+    const avgCapLabelEl = document.getElementById("avgMarketCapChangeLabel");
+    if (avgCapEl) {
+      avgCapEl.classList.remove("text-success", "text-danger");
+
+      if (countMarketCapValue > 0) {
+        const avgCapValue = sumMarketCapValue / countMarketCapValue;
+        avgCapEl.textContent = formatLargeCurrency(avgCapValue, selectedCurrency);
+      } else {
+        avgCapEl.textContent = "--";
+      }
+
+      if (avgCapLabelEl && countMarketCapChange > 0) {
+        const avgCap = sumMarketCapChange / countMarketCapChange;
+        const formattedAvgCap = `${avgCap >= 0 ? "+" : ""}${avgCap.toFixed(2)}%`;
+        avgCapLabelEl.textContent = formattedAvgCap;
+        avgCapLabelEl.classList.remove("text-success", "text-danger");
+        avgCapLabelEl.classList.add(avgCap >= 0 ? "text-success" : "text-danger");
+      }
+    }
+
+    // ✅ Show last updated time
+    const now = new Date();
+    document.getElementById("lastUpdated").innerText = 
+      "Last Updated: " + now.toLocaleTimeString();
+
+    // Update pagination UI
+    const rangeInfoEl = document.getElementById("tableRangeInfo");
+    if (rangeInfoEl) {
+      rangeInfoEl.textContent = `Showing ${startIndex + 1}-${endIndex} of ${totalItems}`;
+    }
+
+    const pageInfoEl = document.getElementById("pageInfo");
+    if (pageInfoEl) {
+      pageInfoEl.textContent = `${currentPage} / ${totalPages}`;
+    }
+
+    const prevItem = document.getElementById("prevPageItem");
+    const nextItem = document.getElementById("nextPageItem");
+    if (prevItem) {
+      prevItem.classList.toggle("disabled", currentPage === 1);
+    }
+    if (nextItem) {
+      nextItem.classList.toggle("disabled", currentPage === totalPages);
+    }
+
+    // Refresh watchlist pills with latest price/change info
+    updateWatchlistView();
+
+  } catch (err) {
+    console.error("Error fetching data:", err);
+    tableBody.innerHTML = `<tr><td colspan="4" class="text-center text-danger">
+      Failed to fetch data. Retrying...
+    </td></tr>`;
+  }
+}
+
+function updateSupplyCards() {
+  const container = document.getElementById("supplyCardsRow");
+
+  if (!container) {
+    return;
+  }
+
+  container.innerHTML = "";
+
+  if (!Array.isArray(latestCryptoList) || latestCryptoList.length === 0) {
+    return;
+  }
+
+  // Build a lookup by symbol from the latest data
+  const bySymbol = {};
+  latestCryptoList.forEach(coin => {
+    const sym = (coin.symbol || "").toUpperCase();
+    if (sym) {
+      bySymbol[sym] = coin;
+    }
+  });
+
+  // Show a curated list of well-known coins (including Avalanche)
+  const coinsToShow = SUPPLY_SNAPSHOT_SYMBOLS
+    .map(sym => bySymbol[sym])
+    .filter(Boolean);
+
+  coinsToShow.forEach(coin => {
+    const symbolUpper = (coin.symbol || "").toUpperCase();
+    const circulating = typeof coin.circulating_supply === "number" ? coin.circulating_supply : null;
+    const circulatingText = circulating && circulating > 0 ? formatSupply(circulating) : "--";
+
+    const card = document.createElement("div");
+    card.className = "metric-card supply-card";
+    card.innerHTML = `
+      <div class="metric-label">${coin.name} (${symbolUpper})</div>
+      <div class="metric-value">${circulatingText}</div>
+    `;
+    container.appendChild(card);
+  });
+}
+
+
+function formatPrice(price, currency) {
+  // Always format prices with up to 2 decimal places
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency.toUpperCase(),
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(price);
+}
+
+function formatLargeCurrency(value, currency) {
+  if (typeof value !== "number" || !isFinite(value)) {
+    return "--";
+  }
+
+  const code = (currency || "usd").toUpperCase();
+
+  try {
+    const formatter = new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: code,
+      maximumFractionDigits: 0,
+    });
+    const parts = formatter.formatToParts(0);
+    const currencyPart = parts.find(p => p.type === "currency");
+    const symbol = currencyPart ? currencyPart.value : "";
+
+    if (value >= 1e12) {
+      return `${symbol}${(value / 1e12).toFixed(2)}T`;
+    }
+    if (value >= 1e9) {
+      return `${symbol}${(value / 1e9).toFixed(2)}B`;
+    }
+    if (value >= 1e6) {
+      return `${symbol}${(value / 1e6).toFixed(2)}M`;
+    }
+
+    // For smaller numbers, fall back to normal currency formatting
+    return formatPrice(value, currency);
+  } catch (e) {
+    // If Intl throws for some reason, gracefully fall back
+    return formatPrice(value, currency);
+  }
+}
+
+function formatSupply(value) {
+  if (typeof value !== "number" || !isFinite(value)) {
+    return "--";
+  }
+
+  const abs = Math.abs(value);
+
+  if (abs >= 1e12) {
+    return `${(value / 1e12).toFixed(2)}T`;
+  }
+  if (abs >= 1e9) {
+    return `${(value / 1e9).toFixed(2)}B`;
+  }
+  if (abs >= 1e6) {
+    return `${(value / 1e6).toFixed(2)}M`;
+  }
+  if (abs >= 1e3) {
+    return `${(value / 1e3).toFixed(2)}K`;
+  }
+
+  return value.toFixed(2);
+}
+
+function changeCurrency(newCurrency) {
+  selectedCurrency = newCurrency;
+  currentPage = 1;
+  fetchCryptoData();
+}
+
+function changePage(delta) {
+  currentPage += delta;
+  fetchCryptoData();
+}
+// ✅ Initial load + refresh every 15s
+fetchCryptoData();
+setInterval(() => {
+  fetchCryptoData();
+}, 15000);
+  </script>
+</body>
+</html>
