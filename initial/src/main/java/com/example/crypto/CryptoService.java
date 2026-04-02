@@ -19,6 +19,7 @@ import java.util.Locale;
 public class CryptoService {
 
     private static final String BASE_URL = "https://api.coingecko.com/api/v3";
+    private static final String DEFAULT_DEMO_KEY = "CG-enDBBmcRYDzNFGNHx3MCM7cf";
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
@@ -40,10 +41,7 @@ public class CryptoService {
                 ? "usd"
                 : currency.toLowerCase(Locale.ROOT);
 
-        // If no API key yet, return demo data so the UI still works
-        if (apiKey == null || apiKey.isBlank()) {
-            return getDemoData(vsCurrency.toUpperCase(Locale.ROOT));
-        }
+        String coinGeckoKey = resolveCoinGeckoKey();
 
         try {
             String responseBody = webClient.get()
@@ -53,7 +51,7 @@ public class CryptoService {
                             .queryParam("order", "market_cap_desc")
                             .queryParam("price_change_percentage", "24h")
                             .build())
-                        .header("x-cg-demo-api-key", apiKey)
+                        .header("x-cg-demo-api-key", coinGeckoKey)
                     .retrieve()
                     .bodyToMono(String.class)
                     .timeout(Duration.ofSeconds(8))
@@ -105,16 +103,14 @@ public class CryptoService {
     }
 
     public GlobalMarketData getGlobalMarketData() {
-        if (apiKey == null || apiKey.isBlank()) {
-            return getDemoGlobalData();
-        }
+        String coinGeckoKey = resolveCoinGeckoKey();
 
         try {
             String responseBody = webClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/global")
                             .build())
-                    .header("x-cg-demo-api-key", apiKey)
+                    .header("x-cg-demo-api-key", coinGeckoKey)
                     .retrieve()
                     .bodyToMono(String.class)
                     .timeout(Duration.ofSeconds(8))
@@ -134,6 +130,63 @@ public class CryptoService {
             return new GlobalMarketData(totalMarketCapUsd, marketCapChange24hUsd);
         } catch (Exception ex) {
             return getDemoGlobalData();
+        }
+    }
+
+    public List<ExchangeInfo> getExchanges() {
+        String coinGeckoKey = resolveCoinGeckoKey();
+
+        try {
+            String responseBody = webClient.get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/exchanges")
+                            .queryParam("per_page", "250")
+                            .build())
+                    .header("x-cg-demo-api-key", coinGeckoKey)
+                    .retrieve()
+                    .bodyToMono(String.class)
+                    .timeout(Duration.ofSeconds(10))
+                    .onErrorResume(ex -> Mono.empty())
+                    .block();
+
+            if (responseBody == null || responseBody.isBlank()) {
+                return getDemoExchanges();
+            }
+
+            JsonNode root = objectMapper.readTree(responseBody);
+            if (!root.isArray()) {
+                return getDemoExchanges();
+            }
+
+            List<ExchangeInfo> exchanges = new ArrayList<>();
+            for (JsonNode exchangeNode : root) {
+                String name = exchangeNode.path("name").asText();
+                String image = exchangeNode.path("image").asText();
+                String symbol = exchangeNode.path("id").asText();
+
+                Integer trustScore = exchangeNode.path("trust_score").isNumber()
+                        ? exchangeNode.path("trust_score").asInt()
+                        : null;
+                Integer trustScoreRank = exchangeNode.path("trust_score_rank").isNumber()
+                        ? exchangeNode.path("trust_score_rank").asInt()
+                        : null;
+                Double tradeVolume24hBtc = exchangeNode.path("trade_volume_24h_btc").isNumber()
+                        ? exchangeNode.path("trade_volume_24h_btc").asDouble()
+                        : null;
+
+                exchanges.add(new ExchangeInfo(
+                        name,
+                        image,
+                        symbol,
+                        trustScore,
+                        trustScoreRank,
+                        tradeVolume24hBtc
+                ));
+            }
+
+            return exchanges;
+        } catch (Exception ex) {
+            return getDemoExchanges();
         }
     }
 
@@ -203,5 +256,21 @@ public class CryptoService {
         String demoClassification = "Neutral";
         long demoTimestamp = 0L;
         return new FearGreedData(demoValue, demoClassification, demoTimestamp);
+    }
+
+    private List<ExchangeInfo> getDemoExchanges() {
+        List<ExchangeInfo> demo = new ArrayList<>();
+        demo.add(new ExchangeInfo("Binance", "https://assets.coingecko.com/markets/images/52/small/binance.jpg", "binance", 10, 1, 1800000.0));
+        demo.add(new ExchangeInfo("Coinbase Exchange", "https://assets.coingecko.com/markets/images/23/small/Coinbase_Coin_Primary.png", "gdax", 10, 2, 780000.0));
+        demo.add(new ExchangeInfo("Kraken", "https://assets.coingecko.com/markets/images/29/small/kraken.jpg", "kraken", 10, 3, 620000.0));
+        demo.add(new ExchangeInfo("Bybit", "https://assets.coingecko.com/markets/images/698/small/bybit_spot.png", "bybit_spot", 10, 4, 540000.0));
+        return demo;
+    }
+
+    private String resolveCoinGeckoKey() {
+        if (apiKey != null && !apiKey.isBlank()) {
+            return apiKey;
+        }
+        return DEFAULT_DEMO_KEY;
     }
 }

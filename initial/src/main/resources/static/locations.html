@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CryptoDash | Locations</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Oswald:wght@600&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <div class="top-nav">
+      <div class="top-nav-left">
+        <a href="index.html" class="top-logo">CryptoDash</a>
+        <nav class="top-menu">
+          <a href="index.html">Cryptocurrencies</a>
+          <a href="exchange.html">Exchanges</a>
+          <a href="locations.html" class="active">Locations</a>
+        </nav>
+      </div>
+      <div class="top-nav-right">
+        <button class="ask-ai-pill" type="button">
+          <i class="bi bi-stars"></i>
+          <span>Ask AI</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="secondary-tabs-wrapper">
+      <div class="secondary-tabs">
+        <button class="active" type="button">All Locations</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="tagline-wrapper">
+    <div class="tagline-inner">
+      <span class="moving-text">Explore trusted crypto locations and find addresses in seconds.</span>
+    </div>
+  </div>
+
+  <main class="container mt-4 mb-5 locations-page-wrapper">
+    <section class="locations-hero">
+      <h1 class="locations-title">Crypto Locations Directory</h1>
+      <p class="locations-subtitle mb-0">
+        Find exchange desks, ATMs, merchants, and offices across North York. More locations added regularly with live updates from our community and partners. 
+      </p>
+    </section>
+
+    <section class="table-wrap-card p-3 p-md-4">
+      <div class="locations-toolbar">
+        <div class="row g-2 align-items-end">
+          <div class="col-12 col-md-5">
+            <label for="locationSearchInput" class="form-label small mb-1">Search</label>
+            <input id="locationSearchInput" type="text" class="form-control" placeholder="Search name, city, country, or address" />
+          </div>
+          <div class="col-6 col-md-3">
+            <label for="locationTypeFilter" class="form-label small mb-1">Type</label>
+            <select id="locationTypeFilter" class="form-select">
+              <option value="all">All Types</option>
+              <option value="atm">ATM</option>
+              <option value="exchange">Exchange Desk</option>
+              <option value="merchant">Merchant</option>
+              <option value="office">Office</option>
+            </select>
+          </div>
+          <div class="col-6 col-md-3">
+            <label for="locationCityFilter" class="form-label small mb-1">City</label>
+            <select id="locationCityFilter" class="form-select">
+              <option value="all">All Cities</option>
+            </select>
+          </div>
+          <div class="col-12 col-md-1 d-grid">
+            <button id="locationResetButton" class="btn btn-outline-secondary" type="button" aria-label="Reset Filters">
+              <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+        <small id="locationCountInfo" class="text-muted">Loading locations...</small>
+        <small id="locationSourceInfo" class="text-muted">Connecting to backend...</small>
+      </div>
+
+      <div id="locationEmptyState" class="location-empty d-none">
+        <div class="mb-2" style="font-size: 1.8rem;"><i class="bi bi-geo-alt"></i></div>
+        <p class="mb-0">No locations match your current filters.</p>
+      </div>
+
+      <div id="locationScrollArea" class="location-scroll-area">
+        <div id="locationGrid" class="location-grid"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer mt-5 pt-4 pb-3">
+    <div class="container">
+      <div class="row">
+
+        <div class="col-md-4 mb-3">
+          <h6>Navigate</h6>
+          <ul class="list-unstyled">
+            <li><a href="news.html" class="text-decoration-none">News</a></li>
+            <li><a href="currency.html" class="text-decoration-none">Currency Converter</a></li>
+          </ul>
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <h6>Legal</h6>
+          <ul class="list-unstyled">
+            <li><a href="privacy.html" class="text-decoration-none">Privacy Policy</a></li>
+            <li><a href="disclaimer.html" class="text-decoration-none">Disclaimer</a></li>
+          </ul>
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <h6>Connect</h6>
+          <a href="mailto:ayush.ag3465@gmail.com" class="me-3" title="Email Us"><i class="bi bi-envelope" style="font-size: 1.2rem;"></i></a>
+          <a href="#" class="me-3" title="Github"><i class="bi bi-github"></i></a>
+          <a href="#" class="me-3" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
+        </div>
+
+      </div>
+      <hr class="border-secondary" />
+      <p class="text-center small mb-0">&copy; 2025 CryptoDash. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Replace this sample data with Firebase documents once backend wiring is ready.
+    const SAMPLE_LOCATIONS = [
+      {
+        id: "tor-atm-1",
+        name: "King Street Bitcoin ATM",
+        type: "atm",
+        city: "Toronto",
+        country: "Canada",
+        address: "145 King St W, Toronto, ON M5H 1J8",
+        lat: 43.6487,
+        lng: -79.3833,
+        hours: "Daily 08:00-22:00",
+        status: "open",
+        services: ["Buy", "Sell"]
+      },
+      {
+        id: "van-ex-1",
+        name: "Vancouver Harbour Exchange Desk",
+        type: "exchange",
+        city: "Vancouver",
+        country: "Canada",
+        address: "1055 Canada Pl, Vancouver, BC V6C 0C3",
+        lat: 49.2886,
+        lng: -123.1119,
+        hours: "Mon-Sat 09:30-19:00",
+        status: "open",
+        services: ["Spot", "OTC", "Custody"]
+      },
+      {
+        id: "mtl-merchant-1",
+        name: "Old Port Crypto Cafe",
+        type: "merchant",
+        city: "Montreal",
+        country: "Canada",
+        address: "333 Rue de la Commune O, Montreal, QC H2Y 2E2",
+        lat: 45.5036,
+        lng: -73.5541,
+        hours: "Daily 10:00-22:00",
+        status: "open",
+        services: ["BTC Payments", "Lightning"]
+      },
+      {
+        id: "cal-office-1",
+        name: "Calgary Digital Asset Office",
+        type: "office",
+        city: "Calgary",
+        country: "Canada",
+        address: "855 2 St SW, Calgary, AB T2P 4K7",
+        lat: 51.0450,
+        lng: -114.0665,
+        hours: "Mon-Fri 09:00-18:00",
+        status: "open",
+        services: ["Onboarding", "Compliance", "Support"]
+      },
+      {
+        id: "ott-office-1",
+        name: "Ottawa Service Center",
+        type: "office",
+        city: "Ottawa",
+        country: "Canada",
+        address: "50 O'Connor St, Ottawa, ON K1P 6L2",
+        lat: 45.4205,
+        lng: -75.6972,
+        hours: "Mon-Fri 09:00-17:30",
+        status: "open",
+        services: ["KYC", "Wallet Support"]
+      },
+      {
+        id: "edm-atm-1",
+        name: "Jasper Avenue ATM",
+        type: "atm",
+        city: "Edmonton",
+        country: "Canada",
+        address: "10220 103 Ave NW, Edmonton, AB T5J 0H6",
+        lat: 53.5456,
+        lng: -113.4969,
+        hours: "Daily 07:00-23:00",
+        status: "open",
+        services: ["Buy"]
+      },
+      {
+        id: "wpg-merchant-1",
+        name: "Exchange District Electronics",
+        type: "merchant",
+        city: "Winnipeg",
+        country: "Canada",
+        address: "133 Albert St, Winnipeg, MB R3B 1G6",
+        lat: 49.8968,
+        lng: -97.1384,
+        hours: "Daily 11:00-21:00",
+        status: "open",
+        services: ["USDT", "BTC Payments"]
+      },
+      {
+        id: "hal-ex-1",
+        name: "Halifax Atlantic OTC Lounge",
+        type: "exchange",
+        city: "Halifax",
+        country: "Canada",
+        address: "1875 Upper Water St, Halifax, NS B3J 1S9",
+        lat: 44.6517,
+        lng: -63.5732,
+        hours: "Mon-Sat 10:00-19:30",
+        status: "open",
+        services: ["Spot", "OTC", "P2P"]
+      },
+      {
+        id: "vic-atm-1",
+        name: "Inner Harbour Crypto ATM",
+        type: "atm",
+        city: "Victoria",
+        country: "Canada",
+        address: "721 Government St, Victoria, BC V8W 1W5",
+        lat: 48.4264,
+        lng: -123.3656,
+        hours: "Daily 06:30-22:30",
+        status: "open",
+        services: ["Buy", "Sell"]
+      },
+      {
+        id: "reg-office-1",
+        name: "Regina Support Desk",
+        type: "office",
+        city: "Regina",
+        country: "Canada",
+        address: "1874 Scarth St, Regina, SK S4P 4B3",
+        lat: 50.4479,
+        lng: -104.6109,
+        hours: "Mon-Fri 09:00-18:00",
+        status: "closed",
+        services: ["Remittance", "Institutional Desk"]
+      }
+    ];
+
+    const typeLabels = {
+      atm: "ATM",
+      exchange: "Exchange Desk",
+      merchant: "Merchant",
+      office: "Office"
+    };
+
+    const LOCATIONS_BATCH_SIZE = 15;
+
+    let allLocations = [];
+    let filteredLocations = [];
+    let renderedLocationCount = 0;
+
+    const locationGrid = document.getElementById("locationGrid");
+    const locationScrollArea = document.getElementById("locationScrollArea");
+    const locationEmptyState = document.getElementById("locationEmptyState");
+    const locationCountInfo = document.getElementById("locationCountInfo");
+    const searchInput = document.getElementById("locationSearchInput");
+    const typeFilter = document.getElementById("locationTypeFilter");
+    const cityFilter = document.getElementById("locationCityFilter");
+    const resetButton = document.getElementById("locationResetButton");
+    const locationSourceInfo = document.getElementById("locationSourceInfo");
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function toMapsUrl(address) {
+      return "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(address);
+    }
+
+    function normalizeLocation(location, index) {
+      const rawType = String(location?.type || location?.TYPE || "office").trim().toLowerCase();
+      const type = ["atm", "exchange", "merchant", "office"].includes(rawType) ? rawType : "office";
+
+      const rawStatus = String(location?.status || location?.STATUS || "open").trim().toLowerCase();
+      const status = rawStatus === "closed" ? "closed" : "open";
+
+      const rawServices = Array.isArray(location?.services)
+        ? location.services
+        : (typeof location?.services === "string" ? [location.services] : []);
+
+      const phone = String(location?.phone || location?.number || location?.NUMBER || "N/A").trim() || "N/A";
+      const rating = String(location?.rating || location?.RATING || "N/A").trim() || "N/A";
+
+      return {
+        id: String(location?.id || "location-" + index),
+        name: String(location?.name || location?.NAME || location["\uFEFFNAME"] || "Unknown Location"),
+        type,
+        city: String(location?.city || location?.area || location?.AREA || "Unknown City"),
+        country: String(location?.country || location?.COUNTRY || "Canada"),
+        address: String(location?.address || location["FULL ADDRESS"] || "Address not available"),
+        hours: String(location?.hours || location?.TIME || "Hours not provided"),
+        status,
+        phone,
+        rating,
+        services: rawServices
+          .map((service) => String(service || "").trim())
+          .filter((service) => service.length > 0),
+        lat: typeof location?.lat === "number" ? location.lat : null,
+        lng: typeof location?.lng === "number" ? location.lng : null
+      };
+    }
+
+    function isCanadaLocation(location) {
+      return String(location?.country || "").trim().toLowerCase() === "canada";
+    }
+
+    function getFallbackLocations() {
+      return SAMPLE_LOCATIONS
+        .map((location, index) => normalizeLocation(location, index))
+        .filter(isCanadaLocation);
+    }
+
+    async function loadLocationsFromApi() {
+      const response = await fetch("/api/locations");
+      if (!response.ok) {
+        throw new Error("Failed to load locations API");
+      }
+
+      const payload = await response.json();
+      if (!Array.isArray(payload)) {
+        throw new Error("Locations API returned invalid payload");
+      }
+
+      return payload
+        .map((location, index) => normalizeLocation(location, index))
+        .filter(isCanadaLocation);
+    }
+
+    function renderCityOptions() {
+      const cities = Array.from(new Set(allLocations.map(loc => loc.city))).sort((a, b) => a.localeCompare(b));
+      cityFilter.innerHTML = '<option value="all">All Cities</option>';
+      cities.forEach((city) => {
+        const option = document.createElement("option");
+        option.value = city;
+        option.textContent = city;
+        cityFilter.appendChild(option);
+      });
+    }
+
+    function buildLocationCard(location) {
+      const chipLabel = typeLabels[location.type] || "Location";
+      const safeAddress = escapeHtml(location.address);
+      const safeName = escapeHtml(location.name);
+      const safeHours = escapeHtml(location.hours || "Hours not provided");
+      const safePhone = escapeHtml(location.phone || "N/A");
+      const safeRating = escapeHtml(location.rating || "N/A");
+      const safeCity = escapeHtml(location.city);
+      const safeCountry = escapeHtml(location.country);
+      const statusLabel = location.status === "open" ? "Open" : "Closed";
+      const statusClass = location.status === "open" ? "status-open" : "status-closed";
+      const typeClass = "type-" + (location.type || "office");
+      const tags = (location.services || [])
+        .map((service) => '<span class="location-tag">' + escapeHtml(service) + '</span>')
+        .join("");
+
+      return (
+        '<article class="location-card">' +
+          '<div class="location-head">' +
+            '<div>' +
+              '<span class="location-type-chip ' + typeClass + '">' + chipLabel + '</span>' +
+              '<h5 class="location-name mt-2 mb-0">' + safeName + '</h5>' +
+            '</div>' +
+            '<span class="location-status-pill ' + statusClass + '">' + statusLabel + '</span>' +
+          '</div>' +
+          '<p class="location-address"><i class="bi bi-geo-alt-fill"></i><span>' + safeAddress + '</span></p>' +
+          '<div class="location-meta">' +
+            '<div class="location-meta-row"><span>City</span><strong>' + safeCity + ', ' + safeCountry + '</strong></div>' +
+            '<div class="location-meta-row"><span>Phone</span><strong>' + safePhone + '</strong></div>' +
+            '<div class="location-meta-row"><span>Rating</span><strong>' + safeRating + '</strong></div>' +
+            '<div class="location-meta-row"><span>Hours</span><strong>' + safeHours + '</strong></div>' +
+          '</div>' +
+          '<div class="location-tags">' + tags + '</div>' +
+          '<div class="location-actions">' +
+            '<a class="btn btn-primary btn-sm location-action-btn" target="_blank" rel="noopener noreferrer" href="' + toMapsUrl(location.address) + '"><i class="bi bi-sign-turn-right me-1"></i>Directions</a>' +
+            '<button class="btn btn-outline-secondary btn-sm location-copy-btn" type="button" data-copy-address="' + safeAddress + '"><i class="bi bi-clipboard me-1"></i>Copy</button>' +
+          '</div>' +
+        '</article>'
+      );
+    }
+
+    function updateLocationCountInfo() {
+      if (!Array.isArray(filteredLocations) || filteredLocations.length === 0) {
+        locationCountInfo.textContent = "Showing 0 of " + allLocations.length + " locations";
+        return;
+      }
+
+      const hasMore = renderedLocationCount < filteredLocations.length;
+      const suffix = hasMore ? " (scroll for more)" : "";
+      locationCountInfo.textContent =
+        "Showing " + renderedLocationCount + " of " + filteredLocations.length + " matching locations" + suffix;
+    }
+
+    function appendNextLocationBatch() {
+      if (renderedLocationCount >= filteredLocations.length) {
+        updateLocationCountInfo();
+        return;
+      }
+
+      const nextItems = filteredLocations.slice(
+        renderedLocationCount,
+        renderedLocationCount + LOCATIONS_BATCH_SIZE
+      );
+
+      if (nextItems.length === 0) {
+        updateLocationCountInfo();
+        return;
+      }
+
+      const cards = nextItems.map((location) => buildLocationCard(location));
+      locationGrid.insertAdjacentHTML("beforeend", cards.join(""));
+      renderedLocationCount += nextItems.length;
+      updateLocationCountInfo();
+    }
+
+    function renderLocations() {
+      locationGrid.innerHTML = "";
+      renderedLocationCount = 0;
+
+      if (!Array.isArray(filteredLocations) || filteredLocations.length === 0) {
+        if (locationScrollArea) {
+          locationScrollArea.classList.add("d-none");
+          locationScrollArea.scrollTop = 0;
+        }
+        locationEmptyState.classList.remove("d-none");
+        updateLocationCountInfo();
+        return;
+      }
+
+      locationEmptyState.classList.add("d-none");
+      if (locationScrollArea) {
+        locationScrollArea.classList.remove("d-none");
+        locationScrollArea.scrollTop = 0;
+      }
+
+      appendNextLocationBatch();
+
+      if (locationScrollArea) {
+        while (
+          renderedLocationCount < filteredLocations.length &&
+          locationScrollArea.scrollHeight <= locationScrollArea.clientHeight + 8
+        ) {
+          appendNextLocationBatch();
+        }
+      }
+    }
+
+    function applyFilters() {
+      const query = searchInput.value.trim().toLowerCase();
+      const selectedType = typeFilter.value;
+      const selectedCity = cityFilter.value;
+
+      filteredLocations = allLocations.filter((location) => {
+        const searchable = [location.name, location.address, location.city, location.country, location.phone]
+          .join(" ")
+          .toLowerCase();
+
+        const typeMatches = selectedType === "all" || location.type === selectedType;
+        const cityMatches = selectedCity === "all" || location.city === selectedCity;
+        const searchMatches = query.length === 0 || searchable.includes(query);
+
+        return typeMatches && cityMatches && searchMatches;
+      });
+
+      filteredLocations.sort((a, b) => {
+        if (a.city === b.city) return a.name.localeCompare(b.name);
+        return a.city.localeCompare(b.city);
+      });
+
+      renderLocations();
+    }
+
+    async function copyAddress(text, button) {
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = button.innerHTML;
+        button.innerHTML = '<i class="bi bi-check2 me-1"></i>Copied';
+        setTimeout(() => {
+          button.innerHTML = original;
+        }, 1200);
+      } catch (error) {
+        alert("Could not copy address automatically.\n\n" + text);
+      }
+    }
+
+    function bindEvents() {
+      searchInput.addEventListener("input", applyFilters);
+      typeFilter.addEventListener("change", applyFilters);
+      cityFilter.addEventListener("change", applyFilters);
+
+      if (locationScrollArea) {
+        locationScrollArea.addEventListener("scroll", () => {
+          const nearBottom =
+            locationScrollArea.scrollTop + locationScrollArea.clientHeight >=
+            locationScrollArea.scrollHeight - 120;
+
+          if (nearBottom) {
+            appendNextLocationBatch();
+          }
+        });
+      }
+
+      resetButton.addEventListener("click", () => {
+        searchInput.value = "";
+        typeFilter.value = "all";
+        cityFilter.value = "all";
+        applyFilters();
+      });
+
+      locationGrid.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-copy-address]");
+        if (!button) return;
+
+        const address = button.getAttribute("data-copy-address") || "";
+        copyAddress(address, button);
+      });
+    }
+
+    async function initializePage() {
+      let apiFailed = false;
+
+      try {
+        allLocations = await loadLocationsFromApi();
+      } catch (error) {
+        apiFailed = true;
+        allLocations = [];
+      }
+
+      if (!Array.isArray(allLocations) || allLocations.length === 0) {
+        allLocations = getFallbackLocations();
+
+        if (locationSourceInfo) {
+          locationSourceInfo.textContent = apiFailed
+            ? "Source: demo data (backend/Firebase unavailable)."
+            : "Source: demo data (no Firebase locations found).";
+        }
+      } else if (locationSourceInfo) {
+        locationSourceInfo.textContent = "Source: Firebase (via backend API).";
+      }
+
+      renderCityOptions();
+      applyFilters();
+      bindEvents();
+    }
+
+    initializePage();
+  </script>
+</body>
+</html>

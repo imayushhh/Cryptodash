@@ -10,9 +10,11 @@ import java.util.List;
 public class CryptoController {
 
     private final CryptoService cryptoService;
+    private final LocationService locationService;
 
-    public CryptoController(CryptoService cryptoService) {
+    public CryptoController(CryptoService cryptoService, LocationService locationService) {
         this.cryptoService = cryptoService;
+        this.locationService = locationService;
     }
 
     @GetMapping("/api/crypto")
@@ -28,5 +30,17 @@ public class CryptoController {
     @GetMapping("/api/market/fear-greed")
     public FearGreedData getFearGreedIndex() {
         return cryptoService.getFearGreedIndex();
+    }
+
+    @GetMapping("/api/exchanges")
+    public List<ExchangeInfo> getExchanges() {
+        return cryptoService.getExchanges();
+    }
+
+    @GetMapping("/api/locations")
+    public List<LocationInfo> getLocations(@RequestParam(name = "city", required = false) String city,
+                                           @RequestParam(name = "type", required = false) String type,
+                                           @RequestParam(name = "q", required = false) String query) {
+        return locationService.getLocations(city, type, query);
     }
 }

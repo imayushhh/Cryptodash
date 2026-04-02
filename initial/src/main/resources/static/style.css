@@ -260,6 +260,320 @@ body {
   background-color: #f9fafb;
 }
 
+/* ===============================
+   EXCHANGE PAGE
+=============================== */
+.exchange-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.exchange-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.08);
+}
+
+.exchange-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  object-fit: cover;
+}
+
+.exchange-name {
+  color: #111827;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.exchange-symbol {
+  color: #6b7280;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.exchange-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 0;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.exchange-stat-row strong {
+  color: #111827;
+  font-weight: 600;
+}
+
+/* ===============================
+   LOCATIONS PAGE
+=============================== */
+.locations-page-wrapper {
+  max-width: 1240px;
+}
+
+.locations-hero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  padding: 22px 20px;
+  margin-bottom: 18px;
+  border: 1px solid #e5e7eb;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(250, 204, 21, 0.18) 0, rgba(255, 255, 255, 0.8) 42%),
+    radial-gradient(circle at 100% 0%, rgba(14, 165, 233, 0.14) 0, rgba(255, 255, 255, 0.9) 45%),
+    linear-gradient(145deg, #ffffff 0%, #f8fafc 65%, #f1f5f9 100%);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.1);
+}
+
+.locations-hero::after {
+  content: "";
+  position: absolute;
+  right: -90px;
+  top: -80px;
+  width: 220px;
+  height: 220px;
+  border-radius: 999px;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.7) 0%, rgba(255, 255, 255, 0) 70%);
+  transform: rotate(-12deg);
+}
+
+.locations-title {
+  margin: 0 0 6px;
+  font-size: clamp(1.35rem, 2.1vw, 1.9rem);
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.locations-subtitle {
+  color: #475569;
+  max-width: 900px;
+  font-size: 0.93rem;
+}
+
+.locations-stats-row {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.location-stat-card {
+  background: #ffffff;
+  border: 1px solid #dbe3ec;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.location-stat-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+}
+
+.location-stat-value {
+  margin-top: 3px;
+  font-size: 1.22rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.locations-toolbar {
+  margin-bottom: 14px;
+}
+
+.locations-toolbar .form-control,
+.locations-toolbar .form-select {
+  border-radius: 10px;
+}
+
+.locations-toolbar .form-control:focus,
+.locations-toolbar .form-select:focus {
+  border-color: #fbbf24;
+  box-shadow: 0 0 0 2px rgba(250, 191, 36, 0.22);
+}
+
+.location-scroll-area {
+  max-height: 78vh;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.location-scroll-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.location-scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.location-scroll-area::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.location-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+  gap: 14px;
+}
+
+.location-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 14px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+}
+
+.location-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.location-type-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.location-type-chip.type-atm {
+  background: rgba(14, 165, 233, 0.16);
+  color: #0369a1;
+}
+
+.location-type-chip.type-exchange {
+  background: rgba(16, 185, 129, 0.16);
+  color: #047857;
+}
+
+.location-type-chip.type-merchant {
+  background: rgba(249, 115, 22, 0.14);
+  color: #c2410c;
+}
+
+.location-type-chip.type-office {
+  background: rgba(100, 116, 139, 0.16);
+  color: #334155;
+}
+
+.location-name {
+  font-size: 1rem;
+  color: #0f172a;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.location-status-pill {
+  font-size: 0.72rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 3px 9px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.location-status-pill.status-open {
+  color: #166534;
+  background: rgba(134, 239, 172, 0.28);
+}
+
+.location-status-pill.status-closed {
+  color: #991b1b;
+  background: rgba(254, 202, 202, 0.45);
+}
+
+.location-address {
+  margin: 0;
+  display: flex;
+  gap: 8px;
+  color: #374151;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.location-address i {
+  margin-top: 1px;
+  color: #0284c7;
+}
+
+.location-meta {
+  display: grid;
+  gap: 6px;
+}
+
+.location-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  border-top: 1px dashed #e5e7eb;
+  padding-top: 6px;
+  font-size: 0.83rem;
+  color: #6b7280;
+}
+
+.location-meta-row strong {
+  color: #111827;
+  font-weight: 600;
+  text-align: right;
+}
+
+.location-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.location-tag {
+  background: #f3f4f6;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 0.72rem;
+  color: #374151;
+}
+
+.location-actions {
+  margin-top: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.location-action-btn,
+.location-copy-btn {
+  border-radius: 999px;
+}
+
+.location-empty {
+  text-align: center;
+  border: 1px dashed #d1d5db;
+  border-radius: 12px;
+  background: #f9fafb;
+  color: #6b7280;
+  padding: 28px 12px;
+  margin-bottom: 12px;
+}
+
 .table th {
   background: #f3f4f6;
   color: #6b7280;
@@ -785,6 +1099,18 @@ body {
   .news-card-lg img {
     width: 100%;
     height: 180px;
+  }
+
+  .location-scroll-area {
+    max-height: 70vh;
+  }
+
+  .location-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .location-actions {
+    flex-wrap: wrap;
   }
 }
 

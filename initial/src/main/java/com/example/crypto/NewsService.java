@@ -3,7 +3,6 @@ package com.example.crypto;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -11,10 +10,12 @@ import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -31,7 +32,7 @@ public class NewsService {
                        @Value("${newsapi.api.key:}") String apiKey) {
         this.webClient = webClientBuilder
                 .baseUrl(BASE_URL)
-                .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
+            .defaultHeader("Accept", MediaType.APPLICATION_JSON_VALUE)
                 .build();
         this.objectMapper = objectMapper;
         this.apiKey = apiKey;
@@ -44,22 +45,18 @@ public class NewsService {
 
         try {
             Instant now = Instant.now();
-            // Fetch news from the last 48 hours
             Instant fromInstant = now.minus(Duration.ofHours(48));
-            String fromParam = DateTimeFormatter.ISO_INSTANT
-                    .withZone(ZoneOffset.UTC)
-                    .format(fromInstant);
+            String fromDate = LocalDate.now(ZoneOffset.UTC).minusDays(2).toString();
 
             String responseBody = webClient.get()
                     .uri(uriBuilder -> uriBuilder
                             .path("/everything")
                             .queryParam("q", "cryptocurrency")
-                            .queryParam("from", fromParam)
+                    .queryParam("from", fromDate)
                             .queryParam("sortBy", "publishedAt")
-                            .queryParam("language", "en")
-                            .queryParam("pageSize", 40)
+                    .queryParam("apiKey", apiKey)
+                            .queryParam("pageSize", 50)
                             .build())
-                    .header("X-Api-Key", apiKey)
                     .retrieve()
                     .bodyToMono(String.class)
                     .timeout(Duration.ofSeconds(8))
@@ -71,9 +68,14 @@ public class NewsService {
             }
 
             JsonNode root = objectMapper.readTree(responseBody);
+            String status = root.path("status").asText("");
+            if (!"ok".equalsIgnoreCase(status)) {
+                return getDemoNews();
+            }
+
             JsonNode articlesNode = root.path("articles");
             if (!articlesNode.isArray() || articlesNode.isEmpty()) {
-                return Collections.emptyList();
+                return getDemoNews();
             }
 
             List<NewsArticle> articles = new ArrayList<>();
@@ -90,6 +92,11 @@ public class NewsService {
                     continue;
                 }
 
+                Instant publishedInstant = parsePublishedAt(publishedAt);
+                if (publishedInstant == null || publishedInstant.isBefore(fromInstant) || publishedInstant.isAfter(now)) {
+                    continue;
+                }
+
                 articles.add(new NewsArticle(
                         title,
                         description,
@@ -101,9 +108,28 @@ public class NewsService {
                 ));
             }
 
-            return articles;
+            return articles.isEmpty() ? getDemoNews() : articles;
         } catch (Exception ex) {
             return getDemoNews();
+        }
+    }
+
+    private Instant parsePublishedAt(String publishedAt) {
+        if (publishedAt == null || publishedAt.isBlank()) {
+            return null;
+        }
+
+        try {
+            return Instant.parse(publishedAt);
+        } catch (DateTimeParseException ignored) {
+            // Fall through to alternate parser.
+        }
+
+        try {
+            LocalDateTime dt = LocalDateTime.parse(publishedAt, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+            return dt.toInstant(ZoneOffset.UTC);
+        } catch (DateTimeParseException ignored) {
+            return null;
         }
     }
 

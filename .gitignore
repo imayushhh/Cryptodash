@@ -16,3 +16,7 @@ dependency-reduced-pom.xml
 README.html
 .idea
 *.iml
+
+# Local secrets and temporary editor files
+initial/src/main/resources/static/JavaServiceKey.json
+~$*.docx
