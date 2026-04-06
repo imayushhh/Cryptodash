@@ -1,0 +1,422 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CryptoDash | Sign In</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Oswald:wght@600&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <header>
+    <div class="top-nav">
+      <div class="top-nav-left">
+        <a href="index.html" class="top-logo">CryptoDash</a>
+        <nav class="top-menu">
+          <a href="index.html">Cryptocurrencies</a>
+          <a href="exchange.html">Exchanges</a>
+          <a href="locations.html">Locations</a>
+        </nav>
+      </div>
+      <div class="top-nav-right">
+        <div class="auth-user-menu d-none" data-auth-user-menu>
+          <button class="auth-user-pill" type="button" data-auth-user-trigger aria-haspopup="true" aria-expanded="false">
+            <i class="bi bi-person-circle"></i>
+            <span data-auth-user-name>Profile</span>
+            <i class="bi bi-chevron-down small"></i>
+          </button>
+          <div class="auth-user-dropdown d-none" data-auth-user-dropdown>
+            <div class="auth-user-meta">
+              <strong data-auth-user-name-full>Profile</strong>
+              <small data-auth-user-email></small>
+            </div>
+            <button class="auth-dropdown-link auth-logout-btn" type="button" data-auth-logout>Logout</button>
+          </div>
+        </div>
+        <a href="auth.html" class="auth-entry-pill" data-auth-signin aria-label="Open login and signup">
+          <i class="bi bi-person-circle"></i>
+          <span>Sign In</span>
+        </a>
+        <button class="ask-ai-pill" type="button">
+          <i class="bi bi-stars"></i>
+          <span>Ask AI</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <div class="tagline-wrapper">
+    <div class="tagline-inner">
+      <span class="moving-text">Secure login for your personalized CryptoDash profile and AI features.</span>
+    </div>
+  </div>
+
+  <main class="container mt-4 mb-5 auth-page-wrapper">
+    <section class="auth-hero">
+      <h1 class="auth-title">Account Access</h1>
+      <p class="auth-subtitle mb-0">Use Firebase Authentication to sign up or log in, then we sync your profile to crypto_users.</p>
+    </section>
+
+    <section class="table-wrap-card auth-panel p-3 p-md-4">
+      <div class="auth-tab-buttons mb-3">
+        <button id="tabLogin" class="active" type="button">Login</button>
+        <button id="tabSignup" type="button">Sign Up</button>
+      </div>
+
+      <div id="authNotice" class="alert alert-secondary py-2 small mb-3">Initializing authentication...</div>
+      <div id="authError" class="alert alert-danger py-2 small mb-3 d-none"></div>
+
+      <form id="loginForm" class="auth-form">
+        <div class="row g-3">
+          <div class="col-12">
+            <label for="loginEmail" class="form-label">Email</label>
+            <input id="loginEmail" class="form-control" type="email" required autocomplete="email" />
+          </div>
+          <div class="col-12">
+            <label for="loginPassword" class="form-label">Password</label>
+            <input id="loginPassword" class="form-control" type="password" minlength="6" required autocomplete="current-password" />
+          </div>
+        </div>
+        <div class="d-flex justify-content-end mt-3">
+          <button class="btn btn-primary auth-submit-btn" type="submit">Login</button>
+        </div>
+      </form>
+
+      <form id="signupForm" class="auth-form d-none">
+        <div class="row g-3">
+          <div class="col-12">
+            <label for="signupName" class="form-label">Display Name</label>
+            <input id="signupName" class="form-control" type="text" required autocomplete="name" />
+          </div>
+          <div class="col-12">
+            <label for="signupEmail" class="form-label">Email</label>
+            <input id="signupEmail" class="form-control" type="email" required autocomplete="email" />
+          </div>
+          <div class="col-12 col-md-6">
+            <label for="signupPassword" class="form-label">Password</label>
+            <input id="signupPassword" class="form-control" type="password" minlength="6" required autocomplete="new-password" />
+          </div>
+          <div class="col-12 col-md-6">
+            <label for="signupConfirmPassword" class="form-label">Confirm Password</label>
+            <input id="signupConfirmPassword" class="form-control" type="password" minlength="6" required autocomplete="new-password" />
+          </div>
+        </div>
+        <div class="d-flex justify-content-end mt-3">
+          <button class="btn btn-primary auth-submit-btn" type="submit">Create Account</button>
+        </div>
+      </form>
+
+      <div class="auth-divider"><span>or</span></div>
+
+      <div class="d-flex align-items-center gap-2 flex-wrap">
+        <button id="googleSignInButton" class="btn btn-outline-secondary" type="button">
+          <i class="bi bi-google me-1"></i> Continue with Google
+        </button>
+      </div>
+
+      <div id="currentUserBox" class="auth-user-box d-none mt-3">
+        <small class="text-muted d-block mb-1">Current account</small>
+        <strong id="currentUserText"></strong>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer mt-5 pt-4 pb-3">
+    <div class="container">
+      <div class="row">
+
+        <div class="col-md-4 mb-3">
+          <h6>Navigate</h6>
+          <ul class="list-unstyled">
+            <li><a href="news.html" class="text-decoration-none">News</a></li>
+            <li><a href="currency.html" class="text-decoration-none">Currency Converter</a></li>
+          </ul>
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <h6>Legal</h6>
+          <ul class="list-unstyled">
+            <li><a href="https://imayushhh.github.io/Portfolio/" class="text-decoration-none">Privacy Policy</a></li>
+            <li><a href="https://imayushhh.github.io/Portfolio/" class="text-decoration-none">Disclaimer</a></li>
+          </ul>
+        </div>
+
+        <div class="col-md-4 mb-3">
+          <h6>Connect</h6>
+          <a href="mailto:ayush.ag3465@gmail.com" class="me-3" title="Email Us"><i class="bi bi-envelope" style="font-size: 1.2rem;"></i></a>
+          <a href="https://github.com/imayushhh" class="me-3" title="Github"><i class="bi bi-github"></i></a>
+          <a href="https://www.linkedin.com/in/ayush-gupta-654ab7195/" class="me-3" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
+        </div>
+
+      </div>
+      <hr class="border-secondary" />
+      <p class="text-center small mb-0">&copy; 2025 CryptoDash. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script type="module" src="auth-nav.js"></script>
+
+  <script type="module">
+    import { getApp, getApps, initializeApp } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-app.js";
+    import {
+      getAuth,
+      onAuthStateChanged,
+      createUserWithEmailAndPassword,
+      signInWithEmailAndPassword,
+      signInWithPopup,
+      GoogleAuthProvider,
+      updateProfile
+    } from "https://www.gstatic.com/firebasejs/11.0.2/firebase-auth.js";
+
+    const tabLogin = document.getElementById("tabLogin");
+    const tabSignup = document.getElementById("tabSignup");
+    const loginForm = document.getElementById("loginForm");
+    const signupForm = document.getElementById("signupForm");
+    const authNotice = document.getElementById("authNotice");
+    const authError = document.getElementById("authError");
+    const googleSignInButton = document.getElementById("googleSignInButton");
+    const currentUserBox = document.getElementById("currentUserBox");
+    const currentUserText = document.getElementById("currentUserText");
+
+    let authInstance = null;
+    let redirectScheduled = false;
+
+    function setNotice(message, kind) {
+      authNotice.className = "alert py-2 small mb-3";
+      authNotice.classList.add("alert-" + (kind || "secondary"));
+      authNotice.textContent = message;
+    }
+
+    function showError(message) {
+      authError.textContent = message;
+      authError.classList.remove("d-none");
+    }
+
+    function clearError() {
+      authError.textContent = "";
+      authError.classList.add("d-none");
+    }
+
+    function switchTab(tabName) {
+      const isLogin = tabName === "login";
+      tabLogin.classList.toggle("active", isLogin);
+      tabSignup.classList.toggle("active", !isLogin);
+      loginForm.classList.toggle("d-none", !isLogin);
+      signupForm.classList.toggle("d-none", isLogin);
+      clearError();
+    }
+
+    function normalizeAuthError(error) {
+      const code = (error && error.code) ? String(error.code) : "";
+      const fallback = (error && error.message) ? String(error.message) : "Authentication failed.";
+
+      if (code.includes("invalid-credential")) return "Invalid email or password.";
+      if (code.includes("email-already-in-use")) return "This email is already in use.";
+      if (code.includes("weak-password")) return "Password should be at least 6 characters.";
+      if (code.includes("popup-closed-by-user")) return "Google sign-in was cancelled.";
+      if (code.includes("network-request-failed")) return "Network error while contacting Firebase. Check your internet and retry.";
+      if (code.includes("too-many-requests")) return "Too many attempts. Please wait a few minutes and try again.";
+      return code ? `${fallback} (${code})` : fallback;
+    }
+
+    function renderCurrentUser(user) {
+      if (!user) {
+        currentUserBox.classList.add("d-none");
+        currentUserText.textContent = "";
+        return;
+      }
+
+      const display = user.displayName || user.email || user.uid;
+      currentUserText.textContent = display;
+      currentUserBox.classList.remove("d-none");
+    }
+
+    function redirectToHomeAfterAuth() {
+      if (redirectScheduled) {
+        return;
+      }
+
+      redirectScheduled = true;
+      window.location.href = "index.html";
+    }
+
+    async function loadWebConfig() {
+      const response = await fetch("/api/auth/web-config");
+      if (!response.ok) {
+        throw new Error("Could not load /api/auth/web-config");
+      }
+
+      return response.json();
+    }
+
+    function getMissingConfigKeys(config) {
+      const required = ["apiKey", "authDomain", "projectId", "appId"];
+      return required.filter((key) => !config[key] || String(config[key]).trim().length === 0);
+    }
+
+    async function syncProfile(user, payload) {
+      const idToken = await user.getIdToken(true);
+      const response = await fetch("/api/auth/sync-profile", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer " + idToken
+        },
+        body: JSON.stringify(payload || {})
+      });
+
+      if (!response.ok) {
+        let message = "Failed to sync profile.";
+        try {
+          const data = await response.json();
+          if (data && data.error) {
+            message = String(data.error);
+          }
+        } catch (e) {
+          // Ignore parse errors and keep generic message.
+        }
+        throw new Error(message);
+      }
+    }
+
+    async function initializeAuth() {
+      try {
+        const config = await loadWebConfig();
+        const missingKeys = getMissingConfigKeys(config);
+        if (missingKeys.length > 0) {
+          setNotice(
+            "Missing Firebase web config for: " + missingKeys.join(", ") + ". Set FIREBASE_WEB_API_KEY and FIREBASE_WEB_APP_ID, then restart Spring Boot.",
+            "warning"
+          );
+          return;
+        }
+
+        const app = getApps().length > 0
+          ? getApp()
+          : initializeApp({
+              apiKey: config.apiKey,
+              authDomain: config.authDomain,
+              projectId: config.projectId,
+              appId: config.appId
+            });
+
+        authInstance = getAuth(app);
+        authInstance.languageCode = "en";
+
+        onAuthStateChanged(authInstance, async (user) => {
+          renderCurrentUser(user);
+          if (user) {
+            try {
+              await syncProfile(user, {});
+              setNotice("Authenticated and profile is synced to crypto_users.", "success");
+            } catch (error) {
+              showError(error.message || "Profile sync failed.");
+            } finally {
+              redirectToHomeAfterAuth();
+            }
+          } else {
+            redirectScheduled = false;
+            setNotice("Ready. Please sign up or log in.", "secondary");
+          }
+        });
+
+        setNotice("Firebase authentication is ready.", "success");
+      } catch (error) {
+        setNotice("Authentication setup failed.", "warning");
+        showError(error.message || "Unable to initialize Firebase Auth.");
+      }
+    }
+
+    tabLogin.addEventListener("click", () => switchTab("login"));
+    tabSignup.addEventListener("click", () => switchTab("signup"));
+
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      clearError();
+
+      if (!authInstance) {
+        showError("Firebase authentication is not initialized.");
+        return;
+      }
+
+      const email = document.getElementById("loginEmail").value.trim();
+      const password = document.getElementById("loginPassword").value;
+
+      try {
+        setNotice("Signing in...", "secondary");
+        const credential = await signInWithEmailAndPassword(authInstance, email, password);
+        await syncProfile(credential.user, {});
+        setNotice("Login successful.", "success");
+        loginForm.reset();
+      } catch (error) {
+        showError(normalizeAuthError(error));
+      }
+    });
+
+    signupForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      clearError();
+
+      if (!authInstance) {
+        showError("Firebase authentication is not initialized.");
+        return;
+      }
+
+      const displayName = document.getElementById("signupName").value.trim();
+      const email = document.getElementById("signupEmail").value.trim();
+      const password = document.getElementById("signupPassword").value;
+      const confirmPassword = document.getElementById("signupConfirmPassword").value;
+
+      if (password !== confirmPassword) {
+        showError("Password and confirm password do not match.");
+        return;
+      }
+
+      try {
+        setNotice("Creating account...", "secondary");
+        const credential = await createUserWithEmailAndPassword(authInstance, email, password);
+
+        if (displayName) {
+          await updateProfile(credential.user, { displayName: displayName });
+        }
+
+        await syncProfile(credential.user, {
+          displayName: displayName
+        });
+
+        setNotice("Signup successful. Profile saved to crypto_users.", "success");
+        signupForm.reset();
+        switchTab("login");
+      } catch (error) {
+        showError(normalizeAuthError(error));
+      }
+    });
+
+    googleSignInButton.addEventListener("click", async () => {
+      clearError();
+
+      if (!authInstance) {
+        showError("Firebase authentication is not initialized.");
+        return;
+      }
+
+      try {
+        const provider = new GoogleAuthProvider();
+        setNotice("Opening Google sign-in...", "secondary");
+        const credential = await signInWithPopup(authInstance, provider);
+        await syncProfile(credential.user, {});
+        setNotice("Google sign-in successful.", "success");
+      } catch (error) {
+        showError(normalizeAuthError(error));
+      }
+    });
+
+    initializeAuth();
+  </script>
+</body>
+</html>
+

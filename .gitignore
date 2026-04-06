@@ -19,4 +19,9 @@ README.html
 
 # Local secrets and temporary editor files
 initial/src/main/resources/static/JavaServiceKey.json
+initial/src/main/java/com/example/crypto/JavaServiceKey.json
+**/JavaServiceKey.json
+**/serviceAccountKey.json
+**/serviceAccountKey*.json
+**/*service-account*.json
 ~$*.docx

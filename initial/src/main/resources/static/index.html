@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -29,6 +29,24 @@
         </nav>
       </div>
       <div class="top-nav-right">
+        <div class="auth-user-menu d-none" data-auth-user-menu>
+          <button class="auth-user-pill" type="button" data-auth-user-trigger aria-haspopup="true" aria-expanded="false">
+            <i class="bi bi-person-circle"></i>
+            <span data-auth-user-name>Profile</span>
+            <i class="bi bi-chevron-down small"></i>
+          </button>
+          <div class="auth-user-dropdown d-none" data-auth-user-dropdown>
+            <div class="auth-user-meta">
+              <strong data-auth-user-name-full>Profile</strong>
+              <small data-auth-user-email></small>
+            </div>
+            <button class="auth-dropdown-link auth-logout-btn" type="button" data-auth-logout>Logout</button>
+          </div>
+        </div>
+        <a href="auth.html" class="auth-entry-pill" data-auth-signin aria-label="Open login and signup">
+          <i class="bi bi-person-circle"></i>
+          <span>Sign In</span>
+        </a>
         <button class="ask-ai-pill" type="button">
           <i class="bi bi-stars"></i>
           <span>Ask AI</span>
@@ -152,6 +170,10 @@
             </button>
           </div>
 
+          <div id="watchlistAuthNotice" class="alert alert-warning py-2 d-none" role="alert">
+            Sign in to add coins to your personal watchlist.
+          </div>
+
           <div id="watchlistEmptyState" class="text-center py-4 text-muted">
             <div class="mb-3" style="font-size: 2rem;">
               <i class="bi bi-star-fill" style="color: #fbbf24;"></i>
@@ -180,16 +202,16 @@
       <div class="col-md-4 mb-3">
         <h6>Legal</h6>
         <ul class="list-unstyled">
-          <li><a href="privacy.html" class="text-decoration-none">Privacy Policy</a></li>
-          <li><a href="disclaimer.html" class="text-decoration-none">Disclaimer</a></li>
+          <li><a href="https://imayushhh.github.io/Portfolio/" class="text-decoration-none">Privacy Policy</a></li>
+          <li><a href="https://imayushhh.github.io/Portfolio/" class="text-decoration-none">Disclaimer</a></li>
         </ul>
       </div>
 
       <div class="col-md-4 mb-3">
         <h6>Connect</h6>
         <a href="mailto:ayush.ag3465@gmail.com" class="me-3" title="Email Us"><i class="bi bi-envelope" style="font-size: 1.2rem;"></i></a>        
-         <a href="#" class="me-3" title="Github"><i class="bi bi-github"></i></a>
-        <a href="#" class="me-3" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
+         <a href="https://github.com/imayushhh" class="me-3" title="Github"><i class="bi bi-github"></i></a>
+        <a href="https://www.linkedin.com/in/ayush-gupta-654ab7195/" class="me-3" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
       </div>
 
     </div>
@@ -207,6 +229,8 @@
   <!-- Shared global market cap logic -->
   <script src="global-metrics.js"></script>
 
+  <script type="module" src="auth-nav.js"></script>
+
   <!-- Crypto Fetching -->
   <script>
  let selectedCurrency = "usd"; // Default currency
@@ -215,8 +239,11 @@
  let currentPage = 1;          // current pagination page
 
  const WATCHLIST_STORAGE_KEY = "cryptoWatchlist";
- let watchlist = loadWatchlistFromStorage();
+ let watchlist = [];
  let watchlistSet = new Set(watchlist.map(item => (item.symbol || "").toUpperCase()));
+ let watchlistMode = "signed-out";
+ let isWatchlistAuthSignedIn = false;
+ let watchlistSyncBusy = false;
  let latestCryptoBySymbol = {};
  let latestCryptoList = [];
 
@@ -282,6 +309,30 @@
   }
  }
 
+ function normalizeWatchlist(items) {
+  if (!Array.isArray(items)) return [];
+
+  const bySymbol = {};
+  items.forEach(item => {
+    if (!item) return;
+
+    const symbol = (item.symbol || "").toUpperCase().trim();
+    if (!symbol) return;
+
+    bySymbol[symbol] = {
+      symbol,
+      name: (item.name || symbol).trim(),
+      image: (item.image || "").trim()
+    };
+  });
+
+  return Object.values(bySymbol);
+ }
+
+ function rebuildWatchlistSet() {
+  watchlistSet = new Set(watchlist.map(item => (item.symbol || "").toUpperCase()));
+ }
+
  function saveWatchlistToStorage() {
   try {
     localStorage.setItem(WATCHLIST_STORAGE_KEY, JSON.stringify(watchlist));
@@ -290,34 +341,191 @@
   }
  }
 
+ async function getAuthTokenForUserApi() {
+  if (!window.cryptoDashAuth || typeof window.cryptoDashAuth.getIdToken !== "function") {
+    return "";
+  }
+
+  try {
+    return await window.cryptoDashAuth.getIdToken();
+  } catch (error) {
+    console.warn("Could not get Firebase ID token for user API calls", error);
+    return "";
+  }
+ }
+
+ async function loadWatchlistFromBackend() {
+  const token = await getAuthTokenForUserApi();
+  if (!token) {
+    return false;
+  }
+
+  try {
+    const response = await fetch("/api/user/watchlist", {
+      headers: {
+        "Authorization": "Bearer " + token
+      }
+    });
+
+    if (!response.ok) {
+      console.warn("Failed to fetch remote watchlist. Status:", response.status);
+      return false;
+    }
+
+    const payload = await response.json();
+    watchlist = normalizeWatchlist(Array.isArray(payload) ? payload : []);
+    rebuildWatchlistSet();
+    return true;
+  } catch (error) {
+    console.warn("Remote watchlist fetch failed", error);
+    return false;
+  }
+ }
+
+ async function saveWatchlistToBackend() {
+  const token = await getAuthTokenForUserApi();
+  if (!token) {
+    return false;
+  }
+
+  try {
+    const response = await fetch("/api/user/watchlist", {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + token
+      },
+      body: JSON.stringify({ items: watchlist })
+    });
+
+    if (!response.ok) {
+      console.warn("Failed to save remote watchlist. Status:", response.status);
+      return false;
+    }
+
+    const payload = await response.json();
+    if (Array.isArray(payload)) {
+      watchlist = normalizeWatchlist(payload);
+      rebuildWatchlistSet();
+      updateWatchlistView();
+    }
+
+    return true;
+  } catch (error) {
+    console.warn("Remote watchlist save failed", error);
+    return false;
+  }
+ }
+
+ function persistWatchlist() {
+  if (watchlistMode === "remote") {
+    saveWatchlistToBackend();
+  }
+ }
+
+ function setWatchlistGateState() {
+  const notice = document.getElementById("watchlistAuthNotice");
+  const emptyState = document.getElementById("watchlistEmptyState");
+  const resetButton = document.getElementById("watchlistResetButton");
+
+  if (notice) {
+    notice.classList.toggle("d-none", isWatchlistAuthSignedIn);
+  }
+
+  if (!isWatchlistAuthSignedIn && emptyState) {
+    const messageNode = emptyState.querySelector("p");
+    if (messageNode) {
+      messageNode.textContent = "Sign in to view and manage your watchlist.";
+    }
+  }
+
+  if (isWatchlistAuthSignedIn && emptyState) {
+    const messageNode = emptyState.querySelector("p");
+    if (messageNode) {
+      messageNode.textContent = "No coins in your watchlist yet.";
+    }
+  }
+
+  if (resetButton) {
+    resetButton.disabled = !isWatchlistAuthSignedIn || watchlist.length === 0;
+  }
+ }
+
+ function requireWatchlistAuth() {
+  if (isWatchlistAuthSignedIn) {
+    return true;
+  }
+
+  switchTab("watchlist");
+  setWatchlistGateState();
+  return false;
+ }
+
+ async function handleAuthStateForWatchlist() {
+  if (watchlistSyncBusy) {
+    return;
+  }
+
+  watchlistSyncBusy = true;
+
+  try {
+    const token = await getAuthTokenForUserApi();
+
+    isWatchlistAuthSignedIn = Boolean(token);
+
+    if (token) {
+      watchlistMode = "remote";
+      const loaded = await loadWatchlistFromBackend();
+      if (!loaded) {
+        watchlist = [];
+        rebuildWatchlistSet();
+      }
+    } else {
+      watchlistMode = "signed-out";
+      watchlist = [];
+      rebuildWatchlistSet();
+    }
+
+    setWatchlistGateState();
+    updateWatchlistView();
+    fetchCryptoData();
+  } finally {
+    watchlistSyncBusy = false;
+  }
+ }
+
  function isInWatchlist(symbol) {
   return watchlistSet.has(symbol);
  }
 
  function toggleWatchlistCoin(coin) {
-  const symbol = coin.symbol;
+  if (!requireWatchlistAuth()) return;
+
+  const symbol = (coin.symbol || "").toUpperCase();
   if (!symbol) return;
 
   if (watchlistSet.has(symbol)) {
     watchlist = watchlist.filter(item => item.symbol !== symbol);
-    watchlistSet.delete(symbol);
   } else {
     watchlist.push({
-      symbol: coin.symbol,
+      symbol,
       name: coin.name,
       image: coin.image
     });
-    watchlistSet.add(symbol);
   }
 
-  saveWatchlistToStorage();
+  watchlist = normalizeWatchlist(watchlist);
+  rebuildWatchlistSet();
+  persistWatchlist();
   updateWatchlistView();
  }
 
  function clearWatchlist() {
+  if (!requireWatchlistAuth()) return;
+
   watchlist = [];
-  watchlistSet = new Set();
-  saveWatchlistToStorage();
+  rebuildWatchlistSet();
+  persistWatchlist();
   updateWatchlistView();
   fetchCryptoData();
  }
@@ -330,6 +538,12 @@
   if (!itemsContainer || !emptyState || !resetButton) return;
 
   itemsContainer.innerHTML = "";
+
+  if (!isWatchlistAuthSignedIn) {
+    emptyState.style.display = "block";
+    resetButton.disabled = true;
+    return;
+  }
 
   if (watchlist.length === 0) {
     emptyState.style.display = "block";
@@ -365,7 +579,7 @@
 
     const subtitle = changeDisplay
       ? `${priceDisplay} \
-<span class=\"mx-1\">•</span> ${changeDisplay}`
+<span class=\"mx-1\">â€¢</span> ${changeDisplay}`
       : priceDisplay;
 
     const pill = document.createElement("button");
@@ -386,7 +600,13 @@
 
  // Allow removing items by clicking on a pill
  document.addEventListener("DOMContentLoaded", () => {
+  setWatchlistGateState();
   updateWatchlistView();
+  handleAuthStateForWatchlist();
+
+  window.addEventListener("cryptodash-auth-state", () => {
+    handleAuthStateForWatchlist();
+  });
 
   const watchlistItems = document.getElementById("watchlistItems");
   if (watchlistItems) {
@@ -396,10 +616,12 @@
       const symbol = chip.getAttribute("data-symbol");
       if (!symbol) return;
 
+      if (!requireWatchlistAuth()) return;
+
       if (watchlistSet.has(symbol)) {
         watchlist = watchlist.filter(item => item.symbol !== symbol);
-        watchlistSet.delete(symbol);
-        saveWatchlistToStorage();
+        rebuildWatchlistSet();
+        persistWatchlist();
         updateWatchlistView();
         fetchCryptoData();
       }
@@ -412,6 +634,8 @@
     cryptoTableBody.addEventListener("click", (event) => {
       const button = event.target.closest(".watchlist-toggle");
       if (!button) return;
+
+      if (!requireWatchlistAuth()) return;
 
       const coin = {
         symbol: (button.getAttribute("data-symbol") || "").toUpperCase(),
@@ -548,6 +772,7 @@ async function fetchCryptoData() {
 
       const symbolUpper = (coin.symbol || "").toUpperCase();
       const isStarred = isInWatchlist(symbolUpper);
+      const canUseWatchlist = isWatchlistAuthSignedIn;
 
       const safeName = coin.name ? coin.name.replace(/"/g, "&quot;") : "";
       const safeImage = coin.image ? coin.image.replace(/"/g, "&quot;") : "";
@@ -561,6 +786,8 @@ async function fetchCryptoData() {
             data-symbol="${symbolUpper}"
             data-name="${safeName}"
             data-image="${safeImage}"
+            ${canUseWatchlist ? "" : "disabled"}
+            title="${canUseWatchlist ? "Add or remove from watchlist" : "Sign in to use watchlist"}"
           >
             <i class="bi ${isStarred ? "bi-star-fill" : "bi-star"}"></i>
           </button>
@@ -619,7 +846,7 @@ async function fetchCryptoData() {
       }
     }
 
-    // ✅ Show last updated time
+    // âœ… Show last updated time
     const now = new Date();
     document.getElementById("lastUpdated").innerText = 
       "Last Updated: " + now.toLocaleTimeString();
@@ -776,7 +1003,7 @@ function changePage(delta) {
   currentPage += delta;
   fetchCryptoData();
 }
-// ✅ Initial load + refresh every 15s
+// âœ… Initial load + refresh every 15s
 fetchCryptoData();
 setInterval(() => {
   fetchCryptoData();
@@ -784,3 +1011,4 @@ setInterval(() => {
   </script>
 </body>
 </html>
+

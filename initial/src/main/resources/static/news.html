@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -29,6 +29,24 @@
         </nav>
       </div>
       <div class="top-nav-right">
+        <div class="auth-user-menu d-none" data-auth-user-menu>
+          <button class="auth-user-pill" type="button" data-auth-user-trigger aria-haspopup="true" aria-expanded="false">
+            <i class="bi bi-person-circle"></i>
+            <span data-auth-user-name>Profile</span>
+            <i class="bi bi-chevron-down small"></i>
+          </button>
+          <div class="auth-user-dropdown d-none" data-auth-user-dropdown>
+            <div class="auth-user-meta">
+              <strong data-auth-user-name-full>Profile</strong>
+              <small data-auth-user-email></small>
+            </div>
+            <button class="auth-dropdown-link auth-logout-btn" type="button" data-auth-logout>Logout</button>
+          </div>
+        </div>
+        <a href="auth.html" class="auth-entry-pill" data-auth-signin aria-label="Open login and signup">
+          <i class="bi bi-person-circle"></i>
+          <span>Sign In</span>
+        </a>
         <button class="ask-ai-pill" type="button">
           <i class="bi bi-stars"></i>
           <span>Ask AI</span>
@@ -84,8 +102,8 @@
           <h6>Legal</h6>
           <ul class="list-unstyled">
             <li><a href="terms.html" class="text-decoration-none">Terms of Service</a></li>
-            <li><a href="privacy.html" class="text-decoration-none">Privacy Policy</a></li>
-            <li><a href="disclaimer.html" class="text-decoration-none">Disclaimer</a></li>
+            <li><a href="https://imayushhh.github.io/Portfolio/" class="text-decoration-none">Privacy Policy</a></li>
+            <li><a href="https://imayushhh.github.io/Portfolio/" class="text-decoration-none">Disclaimer</a></li>
           </ul>
         </div>
 
@@ -93,8 +111,8 @@
         <div class="col-md-4 mb-3">
           <h6>Connect</h6>
           <a href="mailto:ayush.ag3465@gmail.com" class="me-3" title="Email Us"><i class="bi bi-envelope" style="font-size: 1.2rem;"></i></a>
-          <a href="#" class="me-3" title="Github"><i class="bi bi-github"></i></a>
-          <a href="#" class="me-3" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
+          <a href="https://github.com/imayushhh" class="me-3" title="Github"><i class="bi bi-github"></i></a>
+          <a href="https://www.linkedin.com/in/ayush-gupta-654ab7195/" class="me-3" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
         </div>
 
       </div>
@@ -106,6 +124,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Shared global market cap logic (no-op if card not present) -->
   <script src="global-metrics.js"></script>
+  <script type="module" src="auth-nav.js"></script>
   <script>
     const newsStatusEl = document.getElementById('news-status');
     const newsListEl = document.getElementById('news-list');
@@ -160,7 +179,7 @@
       meta.className = 'news-card-meta';
       const timeText = timeAgo(article.publishedAt);
       const author = article.author && article.author.trim().length > 0 ? article.author : (article.sourceName || 'Unknown');
-      meta.textContent = (timeText ? timeText + ' · ' : '') + 'by ' + author;
+      meta.textContent = (timeText ? timeText + ' Â· ' : '') + 'by ' + author;
 
       bodyDiv.appendChild(pill);
       bodyDiv.appendChild(titleLink);
@@ -351,3 +370,4 @@
   </script>
 </body>
 </html>
+
