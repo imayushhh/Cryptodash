@@ -19,7 +19,6 @@ import java.util.Locale;
 public class CryptoService {
 
     private static final String BASE_URL = "https://api.coingecko.com/api/v3";
-    private static final String DEFAULT_DEMO_KEY = "CG-enDBBmcRYDzNFGNHx3MCM7cf";
 
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
@@ -268,9 +267,10 @@ public class CryptoService {
     }
 
     private String resolveCoinGeckoKey() {
-        if (apiKey != null && !apiKey.isBlank()) {
-            return apiKey;
+        if (apiKey == null || apiKey.isBlank()) {
+            System.err.println("WARNING: COINGECKO_API_KEY environment variable is not set. API calls will fail and demo data will be used.");
+            return "";
         }
-        return DEFAULT_DEMO_KEY;
+        return apiKey;
     }
 }
