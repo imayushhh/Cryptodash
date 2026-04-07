@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CryptoDash | Latest News</title>
 
+  <!-- Preconnect hints -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Oswald:wght@600&display=swap" rel="stylesheet" />
 
@@ -16,6 +21,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
   <!-- Top global navbar (reuse header from index) -->
   <header>
@@ -47,7 +53,7 @@
           <i class="bi bi-person-circle"></i>
           <span>Sign In</span>
         </a>
-        <button class="ask-ai-pill" type="button">
+        <button class="ask-ai-pill" type="button" disabled>
           <i class="bi bi-stars"></i>
           <span>Ask AI</span>
         </button>
@@ -55,7 +61,7 @@
     </div>
   </header>
 
-  <main class="news-page-wrapper">
+  <main class="news-page-wrapper" style="flex: 1;">
     <div class="news-breadcrumb">
       <span>CryptoDash News</span> 
     </div>
@@ -134,6 +140,8 @@
     let allArticles = [];
     let currentNewsPage = 1;
     const NEWS_PAGE_SIZE = 10;
+    const NEWS_FALLBACK_WIDE_IMAGES = ['news-fallback-wide-1.svg', 'news-fallback-wide-2.svg'];
+    const NEWS_FALLBACK_SQUARE_IMAGES = ['news-fallback-square-1.svg', 'news-fallback-square-2.svg'];
 
     function timeAgo(isoString) {
       if (!isoString) return '';
@@ -148,15 +156,52 @@
       return diffHours + ' hours ago';
     }
 
+    function stableHash(value) {
+      let hash = 0;
+      const text = String(value || '');
+      for (let i = 0; i < text.length; i++) {
+        hash = ((hash << 5) - hash) + text.charCodeAt(i);
+        hash |= 0;
+      }
+      return Math.abs(hash);
+    }
+
+    function pickFallbackImage(article, variants) {
+      const seed = [article?.title, article?.sourceName, article?.url].filter(Boolean).join('|');
+      const index = stableHash(seed) % variants.length;
+      return variants[index];
+    }
+
+    function resolveArticleImage(article, isSquare) {
+      const sourceImage = article?.imageUrl && article.imageUrl.trim().length > 0
+        ? article.imageUrl.trim()
+        : '';
+      const fallbackImage = pickFallbackImage(article, isSquare ? NEWS_FALLBACK_SQUARE_IMAGES : NEWS_FALLBACK_WIDE_IMAGES);
+
+      return {
+        sourceImage,
+        fallbackImage,
+        initialImage: sourceImage || fallbackImage
+      };
+    }
+
     function createNewsCard(article) {
       const articleEl = document.createElement('article');
       articleEl.className = 'news-card-lg';
 
-      const imageUrl = article.imageUrl || 'https://via.placeholder.com/300x180?text=Crypto+News';
+      const imageConfig = resolveArticleImage(article, false);
 
       const img = document.createElement('img');
-      img.src = imageUrl;
+      img.src = imageConfig.initialImage;
       img.alt = article.title || 'Crypto news';
+      img.loading = 'lazy';
+      img.onerror = () => {
+        if (img.dataset.fallbackApplied === 'true') {
+          return;
+        }
+        img.dataset.fallbackApplied = 'true';
+        img.src = imageConfig.fallbackImage;
+      };
 
       const bodyDiv = document.createElement('div');
 
@@ -179,7 +224,7 @@
       meta.className = 'news-card-meta';
       const timeText = timeAgo(article.publishedAt);
       const author = article.author && article.author.trim().length > 0 ? article.author : (article.sourceName || 'Unknown');
-      meta.textContent = (timeText ? timeText + ' Â· ' : '') + 'by ' + author;
+      meta.textContent = (timeText ? timeText + ' - ' : '') + 'by ' + author;
 
       bodyDiv.appendChild(pill);
       bodyDiv.appendChild(titleLink);
@@ -198,11 +243,19 @@
       const card = document.createElement('div');
       card.className = 'news-rec-card';
 
-      const imageUrl = article.imageUrl || 'https://via.placeholder.com/80x80?text=News';
+      const imageConfig = resolveArticleImage(article, true);
 
       const img = document.createElement('img');
-      img.src = imageUrl;
+      img.src = imageConfig.initialImage;
       img.alt = article.title || 'Crypto news';
+      img.loading = 'lazy';
+      img.onerror = () => {
+        if (img.dataset.fallbackApplied === 'true') {
+          return;
+        }
+        img.dataset.fallbackApplied = 'true';
+        img.src = imageConfig.fallbackImage;
+      };
 
       const bodyDiv = document.createElement('div');
 
@@ -311,12 +364,11 @@
         renderNewsPage();
 
         // Pick more "interesting" recommended articles:
-        // - must have an image
+        // - works with or without source image (fallbacks are available)
         // - prefer longer descriptions
         // - prefer more recent within the last 48h
         // - avoid repeating the same source when possible
         const withScores = allArticles
-          .filter(a => a.imageUrl && a.imageUrl.trim().length > 0)
           .map(a => {
             const descLen = (a.description || '').length;
             const publishedTime = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
@@ -346,11 +398,11 @@
           }
         }
 
-        // Fallback: if we still don't have 4, just fill with any remaining articles with images
+        // Fallback: if we still don't have 4, fill with any remaining articles.
         if (recommended.length < 4) {
           const needed = 4 - recommended.length;
           const extra = allArticles
-            .filter(a => a.imageUrl && a.imageUrl.trim().length > 0 && !recommended.includes(a))
+            .filter(a => !recommended.includes(a))
             .slice(0, needed);
           recommended.push(...extra);
         }

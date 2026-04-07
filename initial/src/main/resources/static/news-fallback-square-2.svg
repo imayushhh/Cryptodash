@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480" role="img" aria-labelledby="title desc">
+  <title id="title">News Placeholder</title>
+  <desc id="desc">Square fallback image for recommended news.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#111827"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="480" height="480" fill="url(#bg)"/>
+  <path d="M0 355C88 320 152 402 244 372C314 350 365 290 480 290V480H0V355Z" fill="#ffffff" fill-opacity="0.18"/>
+  <rect x="52" y="76" width="376" height="328" rx="20" fill="#ffffff" fill-opacity="0.10" stroke="#ffffff" stroke-opacity="0.20"/>
+
+  <g transform="translate(96 185)">
+    <rect x="0" y="0" width="54" height="54" rx="14" fill="#facc15"/>
+    <path d="M16 38h22L29 14 16 38z" fill="#111827"/>
+  </g>
+
+  <text x="170" y="220" fill="#f9fafb" font-family="Poppins, Arial, sans-serif" font-size="42" font-weight="700">Latest</text>
+  <text x="170" y="264" fill="#e5e7eb" font-family="Poppins, Arial, sans-serif" font-size="28" font-weight="500">Updates</text>
+</svg>

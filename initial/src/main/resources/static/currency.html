@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>CryptoDash | Currency Converter</title>
 
+  <!-- Preconnect hints -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+
   <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Oswald:wght@600&display=swap" rel="stylesheet" />
 
@@ -16,6 +21,7 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
 
   <!-- Shared top navbar -->
   <header>
@@ -47,7 +53,7 @@
           <i class="bi bi-person-circle"></i>
           <span>Sign In</span>
         </a>
-        <button class="ask-ai-pill" type="button">
+        <button class="ask-ai-pill" type="button" onclick="window.location.href='ask-ai.html'">
           <i class="bi bi-stars"></i>
           <span>Ask AI</span>
         </button>
@@ -55,7 +61,7 @@
     </div>
   </header>
 
-  <main class="converter-page-wrapper">
+  <main class="converter-page-wrapper" style="flex: 1;">
     <h1 class="converter-title">Cryptocurrency Converter Calculator</h1>
     <p class="converter-subtitle">
       Check the latest cryptocurrency prices against all global currencies. CryptoDash's converter lets you see how much your crypto is

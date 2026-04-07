@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="675" viewBox="0 0 1200 675" role="img" aria-labelledby="title desc">
+  <title id="title">CryptoDash News Placeholder</title>
+  <desc id="desc">Gradient background with abstract shapes for missing news image.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0f172a"/>
+      <stop offset="60%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <circle cx="1060" cy="140" r="130" fill="#ffffff" fill-opacity="0.10"/>
+  <circle cx="180" cy="560" r="210" fill="#ffffff" fill-opacity="0.08"/>
+  <rect x="80" y="120" width="1040" height="435" rx="26" fill="url(#panel)" stroke="#ffffff" stroke-opacity="0.20"/>
+
+  <g transform="translate(140 220)">
+    <rect x="0" y="0" width="92" height="92" rx="20" fill="#facc15"/>
+    <path d="M28 66h36L50 28 28 66z" fill="#111827"/>
+    <circle cx="50" cy="68" r="6" fill="#111827"/>
+  </g>
+
+  <text x="260" y="275" fill="#ffffff" font-family="Poppins, Arial, sans-serif" font-size="62" font-weight="700">CryptoDash News</text>
+  <text x="260" y="340" fill="#dbeafe" font-family="Poppins, Arial, sans-serif" font-size="30" font-weight="500">Live updates are loading. Stay tuned.</text>
+</svg>
