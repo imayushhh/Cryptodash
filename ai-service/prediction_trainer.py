@@ -2,7 +2,7 @@
 CryptoDash Prediction Trainer
 Runs on GitHub Actions daily after ETL.
 Trains LSTM for all coins and saves predictions to Aiven.
-No training happens on Render.
+Cleans up predictions older than 30 days.
 """
 import os
 import sys
@@ -23,6 +23,7 @@ from tensorflow.keras.layers import LSTM, Dense, Dropout
 DB_URL   = os.environ.get("DATABASE_URL", "")
 LOOKBACK = 60
 HORIZON  = 7
+KEEP_PREDICTIONS_DAYS = 30
 
 FEATURES = [
     "close", "volume", "high", "low", "hl_range",
@@ -36,7 +37,12 @@ def get_conn():
 
 def get_all_coins(conn):
     with conn.cursor() as cur:
-        cur.execute("SELECT coin_id, symbol, name, risk_tier FROM coins WHERE is_active = TRUE")
+        cur.execute("""
+            SELECT coin_id, symbol, name, risk_tier 
+            FROM coins 
+            WHERE is_active = TRUE
+            ORDER BY coin_id
+        """)
         return cur.fetchall()
 
 def load_coin_data(coin_id, conn):
@@ -122,7 +128,6 @@ def train_and_predict(coin_id, df):
     else:
         signal, advice = "HOLD",  "Price expected to remain stable — hold position."
 
-    # Latest indicator values
     latest     = df.iloc[-1]
     indicators = {}
     for col in ["rsi", "macd", "fear_greed", "volume"]:
@@ -173,6 +178,19 @@ def save_predictions(result, conn):
         execute_values(cur, sql, rows)
     conn.commit()
 
+def cleanup_old_predictions(conn):
+    """Delete predictions older than 30 days"""
+    print(f"\nCleaning up predictions older than {KEEP_PREDICTIONS_DAYS} days...")
+    with conn.cursor() as cur:
+        cur.execute("""
+            DELETE FROM predictions 
+            WHERE predicted_at < NOW() - INTERVAL '%s days'
+        """, (KEEP_PREDICTIONS_DAYS,))
+        deleted = cur.rowcount
+    conn.commit()
+    print(f"  Deleted {deleted} old predictions")
+    return deleted
+
 def run_trainer():
     if not DB_URL:
         print("ERROR: DATABASE_URL not set")
@@ -180,6 +198,8 @@ def run_trainer():
 
     print(f"\n{'='*60}")
     print(f"Prediction Trainer started at {datetime.now()}")
+    print(f"Lookback: {LOOKBACK} days | Horizon: {HORIZON} days")
+    print(f"Keeping predictions for: {KEEP_PREDICTIONS_DAYS} days")
     print(f"{'='*60}\n")
 
     conn  = get_conn()
@@ -195,7 +215,7 @@ def run_trainer():
             df = load_coin_data(coin_id, conn)
 
             if len(df) < LOOKBACK + HORIZON + 2:
-                print(f"SKIP (only {len(df)} rows)")
+                print(f"SKIP (only {len(df)} rows — need {LOOKBACK + HORIZON + 2})")
                 continue
 
             result = train_and_predict(coin_id, df)
@@ -209,23 +229,35 @@ def run_trainer():
             save_predictions(result, conn)
             results.append(result)
             ok.append(coin_id)
-            print(f"OK | {result['signal']} | growth: {result['growth_percent']}% | rows: {result['training_rows']}")
+            print(f"OK | {result['signal']:<5} | {result['growth_percent']:+.2f}% | {result['training_rows']} rows trained")
 
         except Exception as e:
             print(f"FAILED: {e}")
             fail.append(coin_id)
 
-    conn.close()
+    # Cleanup predictions older than 30 days
+    deleted = cleanup_old_predictions(conn)
 
+    # Log summary
     print(f"\n{'='*60}")
     print(f"Training complete at {datetime.now()}")
-    print(f"Success: {len(ok)} coins")
-    print(f"Failed:  {len(fail)} coins")
-    print(f"\nTop 10 coins by predicted growth:")
-    sorted_results = sorted(results, key=lambda x: x["growth_percent"], reverse=True)
-    for r in sorted_results[:10]:
-        print(f"  {r['symbol']:<6} {r['growth_percent']:+.2f}% | {r['signal']} | ${r['current_price']:,.2f}")
+    print(f"Success:  {len(ok)} coins")
+    print(f"Failed:   {len(fail)} coins")
+    if fail:
+        print(f"Failed:   {', '.join(fail)}")
+    print(f"Cleaned:  {deleted} old predictions deleted")
+
+    if results:
+        print(f"\nTop 10 coins by predicted growth:")
+        print(f"{'symbol':<8} {'coin_id':<25} {'growth%':<10} {'signal':<6} {'price'}")
+        print(f"-" * 65)
+        sorted_results = sorted(results, key=lambda x: x["growth_percent"], reverse=True)
+        for r in sorted_results[:10]:
+            print(f"{r['symbol']:<8} {r['coin_id']:<25} {r['growth_percent']:+.2f}%     {r['signal']:<6} ${r['current_price']:,.4f}")
+
     print(f"{'='*60}")
+    conn.close()
+    return ok, fail
 
 if __name__ == "__main__":
     run_trainer()
