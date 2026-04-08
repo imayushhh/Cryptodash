@@ -1,0 +1,29 @@
+name: CryptoDash Full History ETL
+
+on:
+  workflow_dispatch:    # manual trigger only — run once when needed
+
+jobs:
+  full-etl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120   # full history takes longer
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install requests pandas numpy psycopg2-binary
+
+      - name: Run full history ETL
+        env:
+          DATABASE_URL:      ${{ secrets.DATABASE_URL }}
+          COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+        run: |
+          python ai-service/etl_pipeline.py full

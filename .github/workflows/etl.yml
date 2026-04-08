@@ -1,0 +1,42 @@
+name: CryptoDash Daily ETL
+
+on:
+  schedule:
+    - cron: "0 0 * * *"   # runs every day at midnight UTC
+  workflow_dispatch:        # allows manual trigger from GitHub UI
+
+jobs:
+  etl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30    # kill if takes longer than 30 mins
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-etl
+          restore-keys: ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          pip install requests pandas numpy psycopg2-binary
+
+      - name: Run daily ETL update
+        env:
+          DATABASE_URL:      ${{ secrets.DATABASE_URL }}
+          COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+        run: |
+          python ai-service/etl_pipeline.py
+
+      - name: Notify on failure
+        if: failure()
+        run: echo "ETL failed — check logs above"
