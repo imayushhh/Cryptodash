@@ -1,4 +1,4 @@
-﻿import sys
+import sys
 import json
 import warnings
 warnings.filterwarnings("ignore")
@@ -7,37 +7,55 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 
 import numpy as np
 import pandas as pd
+import psycopg2
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense, Dropout
 
-LOOKBACK = 14
-HORIZON  = 7
+DB_URL   = os.environ.get("DATABASE_URL", "")
+LOOKBACK = 60   # use last 60 days to predict (more data = better)
+HORIZON  = 7    # predict next 7 days
 
-# Features the LSTM will learn from
-# Source breakdown:
-#   Binance     -> price, open, high, low, volume, hl_range
-#   CoinGecko   -> market_cap
-#   Alternative -> fear_greed_value
-#   Calculated  -> rsi, macd, macd_hist, bb_upper, bb_lower,
-#                  price_change_1d, price_change_7d, volume_change_1d
+# All features from Aiven database
 FEATURES = [
-    "price",           # close price        (Binance)
-    "volume",          # trading volume      (Binance)
-    "high",            # daily high          (Binance)
-    "low",             # daily low           (Binance)
-    "hl_range",        # high-low range      (Binance calculated)
-    "market_cap",      # market cap          (CoinGecko)
-    "fear_greed_value",# fear & greed index  (Alternative.me)
-    "rsi",             # RSI indicator       (calculated)
-    "macd",            # MACD line           (calculated)
-    "macd_hist",       # MACD histogram      (calculated)
-    "bb_upper",        # Bollinger upper     (calculated)
-    "bb_lower",        # Bollinger lower     (calculated)
-    "price_change_1d", # 1 day return        (calculated)
-    "price_change_7d", # 7 day return        (calculated)
-    "volume_change_1d",# volume momentum     (calculated)
+    "close",            # price          (Binance)
+    "volume",           # volume         (Binance)
+    "high",             # daily high     (Binance)
+    "low",              # daily low      (Binance)
+    "hl_range",         # volatility     (calculated)
+    "fear_greed",       # fear/greed     (Alternative.me)
+    "rsi",              # RSI            (calculated)
+    "macd",             # MACD           (calculated)
+    "macd_hist",        # MACD histogram (calculated)
+    "bb_upper",         # Bollinger up   (calculated)
+    "bb_lower",         # Bollinger down (calculated)
+    "price_change_1d",  # 1 day return   (calculated)
+    "price_change_7d",  # 7 day return   (calculated)
+    "volume_change_1d", # volume change  (calculated)
 ]
+
+
+def get_conn():
+    return psycopg2.connect(DB_URL, sslmode="require")
+
+
+def load_from_db(coin_id):
+    """Load OHLCV + indicators from Aiven database"""
+    conn = get_conn()
+    try:
+        sql = """
+            SELECT date, close, volume, high, low, hl_range,
+                   fear_greed, rsi, macd, macd_hist,
+                   bb_upper, bb_lower,
+                   price_change_1d, price_change_7d, volume_change_1d
+            FROM ohlcv_data
+            WHERE coin_id = %s
+            ORDER BY date ASC
+        """
+        df = pd.read_sql(sql, conn, params=(coin_id,))
+        return df
+    finally:
+        conn.close()
 
 
 def build_model(lookback, n_features, horizon):
@@ -55,70 +73,101 @@ def build_model(lookback, n_features, horizon):
 
 def make_sequences(data, lookback, horizon):
     X, y = [], []
-    price_idx = 0  # price is first feature
     for i in range(lookback, len(data) - horizon + 1):
         X.append(data[i - lookback:i])
-        y.append(data[i:i + horizon, price_idx])
+        y.append(data[i:i + horizon, 0])  # 0 = close price
     return np.array(X), np.array(y)
 
 
-def predict(coin_id, horizon=7):
-    csv_path = "market_data_{}.csv".format(coin_id)
-
+def save_prediction_to_db(coin_id, current_price, forecast_list,
+                           growth_pct, signal, advice, features_used):
+    """Save prediction results back to Aiven"""
+    if not DB_URL:
+        return
     try:
-        df = pd.read_csv(csv_path)
-    except FileNotFoundError:
-        return {"error": "No data file found for {}. Run data_collector.py first.".format(coin_id)}
+        conn = get_conn()
+        with conn.cursor() as cur:
+            for item in forecast_list:
+                cur.execute("""
+                    INSERT INTO predictions (
+                        coin_id, predicted_for, current_price,
+                        predicted_price, low_price, high_price,
+                        growth_percent, signal, advice, features_used
+                    ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    ON CONFLICT DO NOTHING
+                """, (
+                    coin_id,
+                    item["date"],
+                    current_price,
+                    item["predicted_price"],
+                    item["low"],
+                    item["high"],
+                    growth_pct,
+                    signal,
+                    advice,
+                    ",".join(features_used)
+                ))
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Warning: Could not save prediction to DB: {e}")
 
-    df["timestamp"] = pd.to_datetime(df["timestamp"])
-    df = df.sort_values("timestamp").reset_index(drop=True)
 
-    # Use available features (some may be missing if collector had errors)
-    available = [f for f in FEATURES if f in df.columns]
-    if "price" not in available:
-        return {"error": "Price column missing in data for {}.".format(coin_id)}
+def predict(coin_id, horizon=7):
+    # Load data from Aiven
+    if DB_URL:
+        try:
+            df = load_from_db(coin_id)
+            if df.empty:
+                return {"error": f"No data in database for {coin_id}. Run ETL first."}
+        except Exception as e:
+            return {"error": f"Database error for {coin_id}: {e}"}
+    else:
+        # Fallback to CSV if no DB connection
+        csv_path = f"market_data_{coin_id}.csv"
+        try:
+            df = pd.read_csv(csv_path)
+            df = df.rename(columns={"price": "close"})
+        except FileNotFoundError:
+            return {"error": f"No data found for {coin_id}."}
 
-    df = df[available].dropna().reset_index(drop=True)
+    df = df.dropna().reset_index(drop=True)
 
     if len(df) < LOOKBACK + horizon + 2:
-        return {"error": "Not enough data for {}.".format(coin_id)}
+        return {"error": f"Not enough data for {coin_id}. Need at least {LOOKBACK + horizon + 2} rows, got {len(df)}."}
 
-    last_price = float(df["price"].iloc[-1])
-    last_date  = pd.to_datetime(df["timestamp"].iloc[-1]) if "timestamp" in df.columns else pd.Timestamp.now()
+    last_price = float(df["close"].iloc[-1])
+    last_date  = pd.to_datetime(df["date"].iloc[-1]) if "date" in df.columns else pd.Timestamp.now()
+    std        = float(df["close"].std())
 
-    # Re-read with timestamp for last_date
-    df_full = pd.read_csv(csv_path)
-    df_full["timestamp"] = pd.to_datetime(df_full["timestamp"])
-    df_full = df_full.sort_values("timestamp").reset_index(drop=True)
-    last_date = df_full["timestamp"].iloc[-1]
-
-    raw = df[available].values.astype(float)
+    # Use available features
+    available  = [f for f in FEATURES if f in df.columns]
+    raw        = df[available].values.astype(float)
     n_features = raw.shape[1]
 
-    # Scale all features to 0-1
+    # Scale all features 0-1
     scaler = MinMaxScaler(feature_range=(0, 1))
     scaled = scaler.fit_transform(raw)
 
+    # Build sequences
     X, y = make_sequences(scaled, LOOKBACK, horizon)
     if len(X) == 0:
-        return {"error": "Not enough sequences for {}.".format(coin_id)}
+        return {"error": f"Not enough sequences for {coin_id}."}
 
-    # Train model
+    # Train LSTM
     model = build_model(LOOKBACK, n_features, horizon)
-    model.fit(X, y, epochs=60, batch_size=8, verbose=0)
+    model.fit(X, y, epochs=60, batch_size=16, verbose=0)
 
-    # Predict using last LOOKBACK days
-    last_seq   = scaled[-LOOKBACK:].reshape(1, LOOKBACK, n_features)
+    # Predict next 7 days
+    last_seq    = scaled[-LOOKBACK:].reshape(1, LOOKBACK, n_features)
     pred_scaled = model.predict(last_seq, verbose=0)[0]
 
     # Inverse transform price only
-    # Build a dummy array to inverse transform price column
-    dummy = np.zeros((horizon, n_features))
-    dummy[:, 0] = pred_scaled  # price is index 0
-    pred_prices = scaler.inverse_transform(dummy)[:, 0]
+    dummy        = np.zeros((horizon, n_features))
+    dummy[:, 0]  = pred_scaled
+    pred_prices  = scaler.inverse_transform(dummy)[:, 0]
 
-    std = float(df["price"].std())
-
+    # Build forecast list
     forecast_list = []
     for i in range(horizon):
         future_date = last_date + pd.Timedelta(days=i + 1)
@@ -132,13 +181,6 @@ def predict(coin_id, horizon=7):
 
     predicted_day7 = forecast_list[-1]["predicted_price"]
     growth_pct     = ((predicted_day7 - last_price) / last_price) * 100
-
-    # Get latest indicator values for context
-    latest = df.iloc[-1]
-    indicators = {}
-    for col in ["rsi", "macd", "fear_greed_value", "volume"]:
-        if col in df.columns:
-            indicators[col] = round(float(latest[col]), 4)
 
     if growth_pct > 5:
         advice = "Strong upward trend predicted — good buy window."
@@ -156,7 +198,14 @@ def predict(coin_id, horizon=7):
         advice = "Price expected to remain stable — hold position."
         signal = "HOLD"
 
-    return {
+    # Get latest indicators for context
+    latest     = df.iloc[-1]
+    indicators = {}
+    for col in ["rsi", "macd", "fear_greed", "volume"]:
+        if col in df.columns:
+            indicators[col] = round(float(latest[col]), 4)
+
+    result = {
         "coin_id":              coin_id,
         "current_price":        round(last_price, 6),
         "predicted_price_day7": round(predicted_day7, 6),
@@ -165,8 +214,17 @@ def predict(coin_id, horizon=7):
         "advice":               advice,
         "indicators":           indicators,
         "features_used":        available,
+        "training_rows":        len(df),
         "forecast":             forecast_list,
     }
+
+    # Save prediction to DB
+    save_prediction_to_db(
+        coin_id, last_price, forecast_list,
+        growth_pct, signal, advice, available
+    )
+
+    return result
 
 
 if __name__ == "__main__":

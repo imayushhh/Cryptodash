@@ -1,231 +1,288 @@
 """
-CryptoDash AI Prediction Server
-Runs on port 5001 — Spring Boot calls this via HTTP.
+CryptoDash AI Server - Lightweight version for Render
+Reads predictions from Aiven DB — no training on server
+RAM usage: ~50MB (no TensorFlow needed)
 """
-
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+import psycopg2
+import psycopg2.extras
 import os
-import sys
+import json
+from datetime import datetime, date, timedelta
 
-# Add current directory to path so ai_model can be imported
-sys.path.insert(0, os.path.dirname(__file__))
-from ai_model import predict
+app  = Flask(__name__)
+CORS(app)
 
-app = Flask(__name__)
-CORS(app)  # Allow Spring Boot (port 8080) to call this
+DB_URL = os.environ.get("DATABASE_URL", "")
 
-# Coins your system supports — matches CryptoService.java demo data + CoinGecko ids
-SUPPORTED_COINS = [
-    "bitcoin",
-    "ethereum",
-    "solana",
-    "binancecoin",
-    "ripple",
-    "cardano",
-    "dogecoin",
-    "tron",
-    "avalanche-2",
-    "chainlink",
-]
+COIN_RISK_TIERS = {}
+COIN_SYMBOLS    = {}
+COIN_NAMES      = {}
 
-# Risk tier per coin (used by advisor)
-COIN_RISK_TIERS = {
-    "bitcoin":      "low",
-    "ethereum":     "low",
-    "binancecoin":  "medium",
-    "ripple":       "medium",
-    "solana":       "medium",
-    "cardano":      "high",
-    "dogecoin":     "high",
-    "tron":         "high",
-    "avalanche-2":  "high",
-    "chainlink":    "high",
-}
+def get_conn():
+    return psycopg2.connect(DB_URL, sslmode="require")
 
-COIN_SYMBOLS = {
-    "bitcoin":      "BTC",
-    "ethereum":     "ETH",
-    "solana":       "SOL",
-    "binancecoin":  "BNB",
-    "ripple":       "XRP",
-    "cardano":      "ADA",
-    "dogecoin":     "DOGE",
-    "tron":         "TRX",
-    "avalanche-2":  "AVAX",
-    "chainlink":    "LINK",
-}
+def load_coin_metadata():
+    global COIN_RISK_TIERS, COIN_SYMBOLS, COIN_NAMES
+    if not DB_URL:
+        return
+    try:
+        conn = get_conn()
+        with conn.cursor() as cur:
+            cur.execute("SELECT coin_id, symbol, name, risk_tier FROM coins WHERE is_active = TRUE")
+            for coin_id, symbol, name, risk_tier in cur.fetchall():
+                COIN_RISK_TIERS[coin_id] = risk_tier
+                COIN_SYMBOLS[coin_id]    = symbol
+                COIN_NAMES[coin_id]      = name
+        conn.close()
+        print(f"Loaded metadata for {len(COIN_SYMBOLS)} coins")
+    except Exception as e:
+        print(f"Warning: Could not load coin metadata: {e}")
 
-COIN_NAMES = {
-    "bitcoin":      "Bitcoin",
-    "ethereum":     "Ethereum",
-    "solana":       "Solana",
-    "binancecoin":  "BNB",
-    "ripple":       "XRP",
-    "cardano":      "Cardano",
-    "dogecoin":     "Dogecoin",
-    "tron":         "TRON",
-    "avalanche-2":  "Avalanche",
-    "chainlink":    "Chainlink",
-}
+def get_latest_prediction(coin_id, conn):
+    """Get the most recent prediction for a coin"""
+    sql = """
+        SELECT DISTINCT ON (predicted_for)
+            coin_id, predicted_at, predicted_for,
+            current_price, predicted_price,
+            low_price, high_price,
+            growth_percent, signal, advice
+        FROM predictions
+        WHERE coin_id = %s
+          AND predicted_at >= NOW() - INTERVAL '2 days'
+        ORDER BY predicted_for ASC, predicted_at DESC
+    """
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(sql, (coin_id,))
+        rows = cur.fetchall()
+    return rows
+
+def get_latest_indicators(coin_id, conn):
+    """Get latest RSI, MACD, fear/greed for a coin"""
+    sql = """
+        SELECT rsi, macd, fear_greed, volume, close
+        FROM ohlcv_data
+        WHERE coin_id = %s
+        ORDER BY date DESC
+        LIMIT 1
+    """
+    with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+        cur.execute(sql, (coin_id,))
+        return cur.fetchone()
 
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "service": "CryptoDash AI"})
+    return jsonify({
+        "status":  "ok",
+        "service": "CryptoDash AI",
+        "mode":    "db-read-only",
+        "coins":   len(COIN_SYMBOLS)
+    })
+
+
+@app.route("/coins", methods=["GET"])
+def list_coins():
+    """List all tracked coins"""
+    coins = []
+    for coin_id, symbol in COIN_SYMBOLS.items():
+        coins.append({
+            "coin_id":   coin_id,
+            "symbol":    symbol,
+            "name":      COIN_NAMES.get(coin_id, coin_id),
+            "risk_tier": COIN_RISK_TIERS.get(coin_id, "high"),
+        })
+    return jsonify({"coins": coins, "total": len(coins)})
 
 
 @app.route("/predict/<coin_id>", methods=["GET"])
 def predict_coin(coin_id):
-    """
-    GET /predict/bitcoin
-    GET /predict/ethereum?horizon=7
-    Returns 7-day price forecast + signal
-    """
-    if coin_id not in SUPPORTED_COINS:
-        return jsonify({"error": f"Coin '{coin_id}' not supported. Supported: {SUPPORTED_COINS}"}), 400
+    """Get latest prediction for a coin"""
+    if not DB_URL:
+        return jsonify({"error": "Database not configured"}), 500
 
-    horizon = int(request.args.get("horizon", 7))
-    result = predict(coin_id, horizon)
+    try:
+        conn = get_conn()
+        rows = get_latest_prediction(coin_id, conn)
 
-    if "error" in result:
-        return jsonify(result), 500
+        if not rows:
+            return jsonify({
+                "error": f"No predictions found for {coin_id}. Trainer may not have run yet."
+            }), 404
 
-    # Attach metadata
-    result["symbol"]    = COIN_SYMBOLS.get(coin_id, coin_id.upper())
-    result["name"]      = COIN_NAMES.get(coin_id, coin_id)
-    result["risk_tier"] = COIN_RISK_TIERS.get(coin_id, "high")
+        indicators = get_latest_indicators(coin_id, conn)
+        conn.close()
 
-    return jsonify(result)
+        # Build forecast list from rows
+        forecast = []
+        for row in rows:
+            forecast.append({
+                "date":            str(row["predicted_for"]),
+                "predicted_price": float(row["predicted_price"] or 0),
+                "low":             float(row["low_price"] or 0),
+                "high":            float(row["high_price"] or 0),
+            })
+
+        latest     = rows[-1]
+        growth_pct = float(latest["growth_percent"] or 0)
+
+        return jsonify({
+            "coin_id":              coin_id,
+            "symbol":               COIN_SYMBOLS.get(coin_id, coin_id.upper()),
+            "name":                 COIN_NAMES.get(coin_id, coin_id),
+            "risk_tier":            COIN_RISK_TIERS.get(coin_id, "high"),
+            "current_price":        float(latest["current_price"] or 0),
+            "predicted_price_day7": float(latest["predicted_price"] or 0),
+            "growth_percent":       growth_pct,
+            "signal":               latest["signal"],
+            "advice":               latest["advice"],
+            "predicted_at":         str(latest["predicted_at"]),
+            "indicators":           dict(indicators) if indicators else {},
+            "forecast":             forecast,
+        })
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/predict/all", methods=["GET"])
 def predict_all():
-    """
-    GET /predict/all
-    Returns predictions for all supported coins, sorted by growth % descending.
-    Used by the investment advisor.
-    """
-    results = []
-    errors = []
+    """Get predictions for all coins sorted by growth"""
+    if not DB_URL:
+        return jsonify({"error": "Database not configured"}), 500
 
-    for coin_id in SUPPORTED_COINS:
-        result = predict(coin_id, 7)
-        if "error" in result:
-            errors.append({"coin_id": coin_id, "error": result["error"]})
-            continue
+    try:
+        conn = get_conn()
+        sql  = """
+            SELECT DISTINCT ON (coin_id)
+                coin_id, current_price, predicted_price,
+                growth_percent, signal, advice, predicted_at
+            FROM predictions
+            WHERE predicted_at >= NOW() - INTERVAL '2 days'
+            ORDER BY coin_id, predicted_at DESC
+        """
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql)
+            rows = cur.fetchall()
+        conn.close()
 
-        result["symbol"]    = COIN_SYMBOLS.get(coin_id, coin_id.upper())
-        result["name"]      = COIN_NAMES.get(coin_id, coin_id)
-        result["risk_tier"] = COIN_RISK_TIERS.get(coin_id, "high")
-        results.append(result)
+        results = []
+        for row in rows:
+            coin_id = row["coin_id"]
+            results.append({
+                "coin_id":              coin_id,
+                "symbol":               COIN_SYMBOLS.get(coin_id, coin_id.upper()),
+                "name":                 COIN_NAMES.get(coin_id, coin_id),
+                "risk_tier":            COIN_RISK_TIERS.get(coin_id, "high"),
+                "current_price":        float(row["current_price"] or 0),
+                "predicted_price_day7": float(row["predicted_price"] or 0),
+                "growth_percent":       float(row["growth_percent"] or 0),
+                "signal":               row["signal"],
+                "advice":               row["advice"],
+                "predicted_at":         str(row["predicted_at"]),
+            })
 
-    # Sort by growth % descending — best predicted return first
-    results.sort(key=lambda x: x.get("growth_percent", 0), reverse=True)
+        results.sort(key=lambda x: x["growth_percent"], reverse=True)
+        return jsonify({"coins": results, "total": len(results)})
 
-    return jsonify({
-        "coins": results,
-        "errors": errors,
-        "total": len(results)
-    })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/advisor", methods=["POST"])
 def advisor():
-    """
-    POST /advisor
-    Body: { "budget": 1000, "risk": "medium", "num_coins": 3 }
-    Returns full portfolio breakdown with allocated amounts and expected returns.
-    """
-    body = request.get_json(silent=True) or {}
+    """Investment advisor — reads from DB, no training"""
+    body      = request.get_json(silent=True) or {}
     budget    = float(body.get("budget", 0))
     risk      = body.get("risk", "medium").lower()
     num_coins = int(body.get("num_coins", 3))
 
     if budget <= 0:
-        return jsonify({"error": "Budget must be greater than 0."}), 400
+        return jsonify({"error": "Budget must be greater than 0"}), 400
     if risk not in ("low", "medium", "high"):
-        return jsonify({"error": "Risk must be low, medium, or high."}), 400
-    if num_coins < 1 or num_coins > len(SUPPORTED_COINS):
-        return jsonify({"error": f"num_coins must be between 1 and {len(SUPPORTED_COINS)}."}), 400
+        return jsonify({"error": "Risk must be low, medium, or high"}), 400
 
-    # Step 1: Get all predictions
-    all_preds = []
-    for coin_id in SUPPORTED_COINS:
-        result = predict(coin_id, 7)
-        if "error" in result:
-            continue
-        result["symbol"]    = COIN_SYMBOLS.get(coin_id, coin_id.upper())
-        result["name"]      = COIN_NAMES.get(coin_id, coin_id)
-        result["risk_tier"] = COIN_RISK_TIERS.get(coin_id, "high")
-        all_preds.append(result)
+    try:
+        conn = get_conn()
+        sql  = """
+            SELECT DISTINCT ON (p.coin_id)
+                p.coin_id, p.current_price, p.predicted_price,
+                p.growth_percent, p.signal, p.advice,
+                c.symbol, c.name, c.risk_tier
+            FROM predictions p
+            JOIN coins c ON p.coin_id = c.coin_id
+            WHERE p.predicted_at >= NOW() - INTERVAL '2 days'
+              AND c.is_active = TRUE
+            ORDER BY p.coin_id, p.predicted_at DESC
+        """
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql)
+            all_preds = cur.fetchall()
+        conn.close()
 
-    # Step 2: Filter by risk tolerance
-    def allowed_by_risk(coin_tier, user_risk):
-        if user_risk == "low":
-            return coin_tier == "low"
-        if user_risk == "medium":
-            return coin_tier in ("low", "medium")
-        return True  # high risk = all coins
+        # Filter by risk
+        def allowed(coin_tier, user_risk):
+            if user_risk == "low":    return coin_tier == "low"
+            if user_risk == "medium": return coin_tier in ("low", "medium")
+            return True
 
-    filtered = [c for c in all_preds if allowed_by_risk(c["risk_tier"], risk)]
+        filtered = [
+            p for p in all_preds
+            if allowed(p["risk_tier"], risk)
+            and float(p["growth_percent"] or 0) > 0
+        ]
 
-    # Step 3: Keep only positive growth predictions, sort high to low
-    positive = [c for c in filtered if c.get("growth_percent", 0) > 0]
-    positive.sort(key=lambda x: x["growth_percent"], reverse=True)
+        # Sort by growth descending
+        filtered.sort(key=lambda x: float(x["growth_percent"] or 0), reverse=True)
+        selected = filtered[:num_coins]
 
-    # Fallback: if no positive coins, take least negative
-    if not positive:
-        positive = sorted(filtered, key=lambda x: x.get("growth_percent", 0), reverse=True)
+        if not selected:
+            return jsonify({"error": "No suitable coins found for your risk profile"}), 404
 
-    selected = positive[:num_coins]
+        # Weighted budget allocation
+        total_growth = sum(max(float(c["growth_percent"]), 0.01) for c in selected)
+        portfolio    = []
+        total_return = 0.0
 
-    if not selected:
-        return jsonify({"error": "No suitable coins found for your risk profile."}), 404
+        for coin in selected:
+            growth_pct      = float(coin["growth_percent"])
+            weight          = max(growth_pct, 0.01) / total_growth
+            allocated       = round(budget * weight, 2)
+            expected_return = round(allocated * (growth_pct / 100), 2)
+            total_return   += expected_return
 
-    # Step 4: Weighted budget allocation by predicted growth %
-    total_growth = sum(max(c["growth_percent"], 0.01) for c in selected)
-    portfolio = []
-    total_expected_return = 0.0
+            portfolio.append({
+                "coin_id":              coin["coin_id"],
+                "name":                 coin["name"],
+                "symbol":               coin["symbol"],
+                "risk_tier":            coin["risk_tier"],
+                "current_price":        float(coin["current_price"] or 0),
+                "predicted_price_day7": float(coin["predicted_price"] or 0),
+                "growth_percent":       growth_pct,
+                "signal":               coin["signal"],
+                "advice":               coin["advice"],
+                "invest_amount":        allocated,
+                "expected_return":      expected_return,
+            })
 
-    for coin in selected:
-        weight          = max(coin["growth_percent"], 0.01) / total_growth
-        allocated       = round(budget * weight, 2)
-        expected_return = round(allocated * (coin["growth_percent"] / 100), 2)
-        total_expected_return += expected_return
-
-        portfolio.append({
-            "coin_id":              coin["coin_id"],
-            "name":                 coin["name"],
-            "symbol":               coin["symbol"],
-            "risk_tier":            coin["risk_tier"],
-            "current_price":        coin["current_price"],
-            "predicted_price_day7": coin["predicted_price_day7"],
-            "growth_percent":       coin["growth_percent"],
-            "signal":               coin["signal"],
-            "advice":               coin["advice"],
-            "invest_amount":        allocated,
-            "expected_return":      expected_return,
-            "forecast":             coin["forecast"],
+        return jsonify({
+            "budget":                budget,
+            "risk":                  risk,
+            "num_coins":             len(portfolio),
+            "total_expected_return": round(total_return, 2),
+            "expected_return_pct":   round((total_return / budget) * 100, 4),
+            "portfolio":             portfolio,
         })
 
-    return jsonify({
-        "budget":                budget,
-        "risk":                  risk,
-        "num_coins":             len(portfolio),
-        "total_expected_return": round(total_expected_return, 2),
-        "expected_return_pct":   round((total_expected_return / budget) * 100, 4),
-        "portfolio":             portfolio,
-    })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("AI_PORT", 5001))
-    print(f"\nCryptoDash AI server starting on port {port}...")
-    print("Endpoints:")
-    print(f"  GET  http://localhost:{port}/health")
-    print(f"  GET  http://localhost:{port}/predict/<coin_id>")
-    print(f"  GET  http://localhost:{port}/predict/all")
-    print(f"  POST http://localhost:{port}/advisor")
-    print("\nMake sure you ran data_collector.py first!\n")
+    load_coin_metadata()
+    port = int(os.environ.get("PORT", 5001))
+    print(f"\nCryptoDash AI server starting on port {port}")
+    print(f"Mode: DB read-only (no TensorFlow)")
+    print(f"Endpoints: /health /coins /predict/<coin> /predict/all /advisor\n")
     app.run(host="0.0.0.0", port=port, debug=False)
