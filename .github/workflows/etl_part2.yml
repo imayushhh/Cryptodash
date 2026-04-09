@@ -1,0 +1,39 @@
+name: CryptoDash Training Part 2
+
+on:
+  schedule:
+    - cron: "30 0 * * *"   # 12:30 AM UTC — coins 31-59
+  workflow_dispatch:
+
+jobs:
+  train-part2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-etl
+
+      - name: Install ML dependencies
+        run: pip install requests pandas numpy psycopg2-binary scikit-learn tensorflow==2.16.1
+
+      - name: Train coins 31-59
+        env:
+          DATABASE_URL:      ${{ secrets.DATABASE_URL }}
+          COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+          TF_CPP_MIN_LOG_LEVEL: "3"
+          PYTHONWARNINGS: "ignore"
+          COIN_BATCH_START: "30"
+          COIN_BATCH_END:   "59"
+        run: python ai-service/prediction_trainer.py

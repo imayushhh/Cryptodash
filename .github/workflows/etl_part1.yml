@@ -1,14 +1,14 @@
-name: CryptoDash Daily ETL + Training
+name: CryptoDash ETL + Training Part 1
 
 on:
   schedule:
-    - cron: "0 0 * * *"
+    - cron: "0 0 * * *"   # midnight UTC — coins 1-30
   workflow_dispatch:
 
 jobs:
-  etl-and-train:
+  etl-and-train-part1:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 90
 
     steps:
       - name: Checkout repo
@@ -23,7 +23,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('ai-service/requirements.txt') }}
+          key: ${{ runner.os }}-pip-etl
 
       - name: Install ETL dependencies
         run: pip install requests pandas numpy psycopg2-binary
@@ -37,8 +37,12 @@ jobs:
       - name: Install ML dependencies
         run: pip install scikit-learn tensorflow==2.16.1
 
-      - name: Train LSTM and save predictions
+      - name: Train coins 1-30
         env:
           DATABASE_URL:      ${{ secrets.DATABASE_URL }}
           COINGECKO_API_KEY: ${{ secrets.COINGECKO_API_KEY }}
+          TF_CPP_MIN_LOG_LEVEL: "3"
+          PYTHONWARNINGS: "ignore"
+          COIN_BATCH_START: "0"
+          COIN_BATCH_END:   "30"
         run: python ai-service/prediction_trainer.py

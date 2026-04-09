@@ -1,6 +1,7 @@
 """
 CryptoDash Prediction Trainer
 LSTM with K.clear_session() fix - no retracing warnings
+Supports batch training via COIN_BATCH_START and COIN_BATCH_END env vars
 Runs on GitHub Actions daily after ETL.
 """
 import os
@@ -20,6 +21,10 @@ DB_URL   = os.environ.get("DATABASE_URL", "")
 LOOKBACK = 60
 HORIZON  = 7
 KEEP_PREDICTIONS_DAYS = 30
+
+# Batch support — split coins across two workflows
+BATCH_START = int(os.environ.get("COIN_BATCH_START", "0"))
+BATCH_END   = int(os.environ.get("COIN_BATCH_END",   "999"))
 
 FEATURES = [
     "close", "volume", "high", "low", "hl_range",
@@ -53,10 +58,9 @@ def load_coin_data(coin_id, conn):
     return pd.read_sql(sql, conn, params=(coin_id,))
 
 def build_model(lookback, n_features, horizon):
-    # Import inside function + clear session = no retracing
     import tensorflow as tf
     import tensorflow.keras.backend as K
-    K.clear_session()  # KEY FIX: clears previous model from memory
+    K.clear_session()
 
     model = tf.keras.Sequential([
         tf.keras.layers.LSTM(64, return_sequences=True,
@@ -93,7 +97,6 @@ def train_and_predict(coin_id, df):
     if len(X) == 0:
         return None
 
-    # Build fresh model with cleared session
     model = build_model(LOOKBACK, n_features, HORIZON)
     model.fit(X, y, epochs=30, batch_size=32, verbose=0)
 
@@ -104,7 +107,6 @@ def train_and_predict(coin_id, df):
     dummy[:, 0] = pred_scaled
     pred_prices = scaler.inverse_transform(dummy)[:, 0]
 
-    # Clear session after prediction to free memory
     import tensorflow.keras.backend as K
     K.clear_session()
 
@@ -197,18 +199,23 @@ def run_trainer():
     print(f"Prediction Trainer started at {datetime.now()}")
     print(f"Model: LSTM with K.clear_session() fix")
     print(f"Lookback: {LOOKBACK} days | Horizon: {HORIZON} days | Epochs: 30")
+    print(f"Batch: coins {BATCH_START} to {BATCH_END}")
     print(f"{'='*60}\n")
 
     conn     = get_conn()
-    coins    = get_all_coins(conn)
+    all_coins = get_all_coins(conn)
+
+    # Slice coins for this batch
+    coins    = all_coins[BATCH_START:BATCH_END]
+    total    = len(all_coins)
     ok, fail = [], []
     results  = []
 
-    print(f"Training LSTM for {len(coins)} coins...\n")
+    print(f"Training LSTM for {len(coins)} coins (batch {BATCH_START}-{BATCH_END} of {total})...\n")
 
-    for i, (coin_id, symbol, name, risk_tier) in enumerate(coins, 1):
+    for i, (coin_id, symbol, name, risk_tier) in enumerate(coins, BATCH_START + 1):
         try:
-            print(f"[{i}/{len(coins)}] {coin_id}...", end=" ", flush=True)
+            print(f"[{i}/{total}] {coin_id}...", end=" ", flush=True)
             df = load_coin_data(coin_id, conn)
 
             if len(df) < LOOKBACK + HORIZON + 2:
@@ -232,20 +239,26 @@ def run_trainer():
             print(f"FAILED: {e}")
             fail.append(coin_id)
 
-    deleted = cleanup_old_predictions(conn)
+    # Only cleanup on last batch
+    deleted = 0
+    if BATCH_END >= total:
+        deleted = cleanup_old_predictions(conn)
+
     conn.close()
 
     print(f"\n{'='*60}")
     print(f"Training complete at {datetime.now()}")
+    print(f"Batch:    coins {BATCH_START}-{min(BATCH_END, total)} of {total}")
     print(f"Success:  {len(ok)} coins")
     print(f"Failed:   {len(fail)} coins")
-    print(f"Cleaned:  {deleted} old predictions")
+    if deleted:
+        print(f"Cleaned:  {deleted} old predictions")
 
     if results:
-        print(f"\nTop 10 by predicted growth:")
+        print(f"\nTop 5 by predicted growth:")
         print(f"{'symbol':<8} {'coin_id':<25} {'growth%':<10} {'signal'}")
         print("-" * 55)
-        for r in sorted(results, key=lambda x: x["growth_percent"], reverse=True)[:10]:
+        for r in sorted(results, key=lambda x: x["growth_percent"], reverse=True)[:5]:
             print(f"{r['symbol']:<8} {r['coin_id']:<25} {r['growth_percent']:+.2f}%     {r['signal']}")
     print(f"{'='*60}")
 
