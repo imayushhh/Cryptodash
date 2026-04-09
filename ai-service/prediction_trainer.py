@@ -1,12 +1,10 @@
 """
 CryptoDash Prediction Trainer
+LSTM with K.clear_session() fix - no retracing warnings
 Runs on GitHub Actions daily after ETL.
-Trains LSTM for all coins and saves predictions to Aiven.
-Cleans up predictions older than 30 days.
 """
 import os
 import sys
-import json
 import warnings
 warnings.filterwarnings("ignore")
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
@@ -15,10 +13,8 @@ import numpy as np
 import pandas as pd
 import psycopg2
 from psycopg2.extras import execute_values
-from datetime import datetime, date, timedelta
+from datetime import datetime
 from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, Dense, Dropout
 
 DB_URL   = os.environ.get("DATABASE_URL", "")
 LOOKBACK = 60
@@ -38,9 +34,8 @@ def get_conn():
 def get_all_coins(conn):
     with conn.cursor() as cur:
         cur.execute("""
-            SELECT coin_id, symbol, name, risk_tier 
-            FROM coins 
-            WHERE is_active = TRUE
+            SELECT coin_id, symbol, name, risk_tier
+            FROM coins WHERE is_active = TRUE
             ORDER BY coin_id
         """)
         return cur.fetchall()
@@ -55,17 +50,22 @@ def load_coin_data(coin_id, conn):
         WHERE coin_id = %s
         ORDER BY date ASC
     """
-    df = pd.read_sql(sql, conn, params=(coin_id,))
-    return df
+    return pd.read_sql(sql, conn, params=(coin_id,))
 
 def build_model(lookback, n_features, horizon):
-    model = Sequential([
-        LSTM(128, return_sequences=True, input_shape=(lookback, n_features)),
-        Dropout(0.2),
-        LSTM(64, return_sequences=False),
-        Dropout(0.2),
-        Dense(32, activation="relu"),
-        Dense(horizon)
+    # Import inside function + clear session = no retracing
+    import tensorflow as tf
+    import tensorflow.keras.backend as K
+    K.clear_session()  # KEY FIX: clears previous model from memory
+
+    model = tf.keras.Sequential([
+        tf.keras.layers.LSTM(64, return_sequences=True,
+                             input_shape=(lookback, n_features)),
+        tf.keras.layers.Dropout(0.2),
+        tf.keras.layers.LSTM(32, return_sequences=False),
+        tf.keras.layers.Dropout(0.2),
+        tf.keras.layers.Dense(16, activation="relu"),
+        tf.keras.layers.Dense(horizon)
     ])
     model.compile(optimizer="adam", loss="mean_squared_error")
     return model
@@ -93,8 +93,9 @@ def train_and_predict(coin_id, df):
     if len(X) == 0:
         return None
 
+    # Build fresh model with cleared session
     model = build_model(LOOKBACK, n_features, HORIZON)
-    model.fit(X, y, epochs=60, batch_size=16, verbose=0)
+    model.fit(X, y, epochs=30, batch_size=32, verbose=0)
 
     last_seq    = scaled[-LOOKBACK:].reshape(1, LOOKBACK, n_features)
     pred_scaled = model.predict(last_seq, verbose=0)[0]
@@ -102,6 +103,10 @@ def train_and_predict(coin_id, df):
     dummy       = np.zeros((HORIZON, n_features))
     dummy[:, 0] = pred_scaled
     pred_prices = scaler.inverse_transform(dummy)[:, 0]
+
+    # Clear session after prediction to free memory
+    import tensorflow.keras.backend as K
+    K.clear_session()
 
     forecast = []
     for i in range(HORIZON):
@@ -152,19 +157,12 @@ def save_predictions(result, conn):
     rows = []
     for item in result["forecast"]:
         rows.append((
-            result["coin_id"],
-            predicted_at,
-            item["date"],
-            result["current_price"],
-            item["predicted_price"],
-            item["low"],
-            item["high"],
-            result["growth_percent"],
-            result["signal"],
-            result["advice"],
-            ",".join(result["features_used"]),
+            result["coin_id"], predicted_at, item["date"],
+            result["current_price"], item["predicted_price"],
+            item["low"], item["high"],
+            result["growth_percent"], result["signal"],
+            result["advice"], ",".join(result["features_used"]),
         ))
-
     sql = """
         INSERT INTO predictions (
             coin_id, predicted_at, predicted_for,
@@ -179,11 +177,10 @@ def save_predictions(result, conn):
     conn.commit()
 
 def cleanup_old_predictions(conn):
-    """Delete predictions older than 30 days"""
     print(f"\nCleaning up predictions older than {KEEP_PREDICTIONS_DAYS} days...")
     with conn.cursor() as cur:
         cur.execute("""
-            DELETE FROM predictions 
+            DELETE FROM predictions
             WHERE predicted_at < NOW() - INTERVAL '%s days'
         """, (KEEP_PREDICTIONS_DAYS,))
         deleted = cur.rowcount
@@ -198,24 +195,24 @@ def run_trainer():
 
     print(f"\n{'='*60}")
     print(f"Prediction Trainer started at {datetime.now()}")
-    print(f"Lookback: {LOOKBACK} days | Horizon: {HORIZON} days")
-    print(f"Keeping predictions for: {KEEP_PREDICTIONS_DAYS} days")
+    print(f"Model: LSTM with K.clear_session() fix")
+    print(f"Lookback: {LOOKBACK} days | Horizon: {HORIZON} days | Epochs: 30")
     print(f"{'='*60}\n")
 
-    conn  = get_conn()
-    coins = get_all_coins(conn)
-    print(f"Training LSTM for {len(coins)} coins...\n")
+    conn     = get_conn()
+    coins    = get_all_coins(conn)
+    ok, fail = [], []
+    results  = []
 
-    ok, fail  = [], []
-    results   = []
+    print(f"Training LSTM for {len(coins)} coins...\n")
 
     for i, (coin_id, symbol, name, risk_tier) in enumerate(coins, 1):
         try:
-            print(f"[{i}/{len(coins)}] Training {coin_id}...", end=" ")
+            print(f"[{i}/{len(coins)}] {coin_id}...", end=" ", flush=True)
             df = load_coin_data(coin_id, conn)
 
             if len(df) < LOOKBACK + HORIZON + 2:
-                print(f"SKIP (only {len(df)} rows — need {LOOKBACK + HORIZON + 2})")
+                print(f"SKIP ({len(df)} rows)")
                 continue
 
             result = train_and_predict(coin_id, df)
@@ -229,35 +226,28 @@ def run_trainer():
             save_predictions(result, conn)
             results.append(result)
             ok.append(coin_id)
-            print(f"OK | {result['signal']:<5} | {result['growth_percent']:+.2f}% | {result['training_rows']} rows trained")
+            print(f"OK | {result['signal']:<5} | {result['growth_percent']:+.2f}% | {result['training_rows']} rows")
 
         except Exception as e:
             print(f"FAILED: {e}")
             fail.append(coin_id)
 
-    # Cleanup predictions older than 30 days
     deleted = cleanup_old_predictions(conn)
+    conn.close()
 
-    # Log summary
     print(f"\n{'='*60}")
     print(f"Training complete at {datetime.now()}")
     print(f"Success:  {len(ok)} coins")
     print(f"Failed:   {len(fail)} coins")
-    if fail:
-        print(f"Failed:   {', '.join(fail)}")
-    print(f"Cleaned:  {deleted} old predictions deleted")
+    print(f"Cleaned:  {deleted} old predictions")
 
     if results:
-        print(f"\nTop 10 coins by predicted growth:")
-        print(f"{'symbol':<8} {'coin_id':<25} {'growth%':<10} {'signal':<6} {'price'}")
-        print(f"-" * 65)
-        sorted_results = sorted(results, key=lambda x: x["growth_percent"], reverse=True)
-        for r in sorted_results[:10]:
-            print(f"{r['symbol']:<8} {r['coin_id']:<25} {r['growth_percent']:+.2f}%     {r['signal']:<6} ${r['current_price']:,.4f}")
-
+        print(f"\nTop 10 by predicted growth:")
+        print(f"{'symbol':<8} {'coin_id':<25} {'growth%':<10} {'signal'}")
+        print("-" * 55)
+        for r in sorted(results, key=lambda x: x["growth_percent"], reverse=True)[:10]:
+            print(f"{r['symbol']:<8} {r['coin_id']:<25} {r['growth_percent']:+.2f}%     {r['signal']}")
     print(f"{'='*60}")
-    conn.close()
-    return ok, fail
 
 if __name__ == "__main__":
     run_trainer()
