@@ -168,6 +168,82 @@
     }
 
     @media (max-width: 768px) {
+      body.advisor-page .top-nav {
+        padding: 10px 12px;
+        gap: 10px;
+        align-items: stretch;
+      }
+
+      body.advisor-page .top-nav-left,
+      body.advisor-page .top-nav-right {
+        width: 100%;
+        min-width: 0;
+        justify-content: space-between;
+      }
+
+      body.advisor-page .top-menu {
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+
+      body.advisor-page .top-menu a {
+        font-size: 0.78rem;
+      }
+
+      body.advisor-page .auth-entry-pill,
+      body.advisor-page .auth-user-pill,
+      body.advisor-page .ask-ai-pill {
+        padding: 6px 10px;
+        font-size: 0.74rem;
+      }
+
+      body.advisor-page .news-page-wrapper {
+        padding-top: 20px;
+        padding-bottom: 28px;
+      }
+
+      body.advisor-page .news-title-main {
+        flex-direction: column;
+        align-items: flex-start !important;
+        gap: 8px !important;
+        font-size: 1.45rem;
+        line-height: 1.2;
+      }
+
+      body.advisor-page .news-title-main i {
+        font-size: 1.05rem;
+      }
+
+      body.advisor-page .metric-card {
+        padding: 16px !important;
+      }
+
+      body.advisor-page #advisor-form .row.g-4 {
+        --bs-gutter-x: 0.9rem;
+        --bs-gutter-y: 0.9rem;
+      }
+
+      body.advisor-page .form-label {
+        font-size: 0.72rem;
+      }
+
+      body.advisor-page .risk-pill {
+        width: 100%;
+        min-height: 44px;
+        line-height: 1.2;
+        white-space: normal;
+      }
+
+      body.advisor-page .table-responsive {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      body.advisor-page .table {
+        min-width: 620px;
+        font-size: 0.8rem;
+      }
+
       body.advisor-page .advisor-portfolio-card__header {
         flex-direction: column;
       }
@@ -178,6 +254,70 @@
 
       body.advisor-page .advisor-portfolio-card__metrics {
         grid-template-columns: 1fr;
+      }
+
+      body.advisor-page .advisor-portfolio-card {
+        padding: 16px;
+      }
+
+      body.advisor-page .advisor-advice-panel {
+        padding: 14px 15px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      body.advisor-page .top-nav {
+        padding: 10px;
+      }
+
+      body.advisor-page .top-nav-left,
+      body.advisor-page .top-nav-right {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      body.advisor-page .top-menu {
+        width: 100%;
+        justify-content: space-between;
+      }
+
+      body.advisor-page .top-menu a {
+        font-size: 0.72rem;
+        padding-bottom: 2px;
+      }
+
+      body.advisor-page .auth-entry-pill,
+      body.advisor-page .auth-user-pill,
+      body.advisor-page .ask-ai-pill {
+        width: 100%;
+        justify-content: center;
+      }
+
+      body.advisor-page .news-page-wrapper {
+        padding-top: 16px;
+        padding-bottom: 24px;
+      }
+
+      body.advisor-page .news-title-main {
+        font-size: 1.25rem;
+      }
+
+      body.advisor-page .metric-card {
+        padding: 14px !important;
+      }
+
+      body.advisor-page .news-section-heading {
+        font-size: 1rem;
+      }
+
+      body.advisor-page .table {
+        min-width: 540px;
+        font-size: 0.76rem;
+      }
+
+      body.advisor-page .advisor-portfolio-card {
+        padding: 14px;
       }
     }
   </style>
