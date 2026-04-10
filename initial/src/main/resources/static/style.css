@@ -340,44 +340,29 @@ select:focus-visible {
 
 .ask-ai-pill {
   border-radius: var(--radius-pill);
-  padding: 6px 16px;
-  border: 1px solid var(--color-border-dark);
-  background-color: var(--color-bg-card);
-  color: var(--color-text-muted);
-  cursor: default;
-  display: flex;
+  padding: 6px 14px;
+  border: 1px solid #64748b;
+  background-color: rgba(30, 41, 59, 0.85);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 0.85rem;
+  font-size: 0.83rem;
   font-weight: 600;
-  opacity: 0.6;
-  position: relative;
+  text-decoration: none;
+  transition: all var(--transition-fast);
 }
 
 .ask-ai-pill i {
-  color: var(--color-text-muted);
+  color: inherit;
 }
 
-.ask-ai-pill::after {
-  content: "Coming Soon";
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--color-bg-elevated);
-  color: var(--color-text-muted);
-  font-size: 0.68rem;
-  padding: 3px 8px;
-  border-radius: 6px;
-  white-space: nowrap;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity var(--transition-fast);
-  border: 1px solid var(--color-border);
-}
-
-.ask-ai-pill:hover::after {
-  opacity: 1;
+.ask-ai-pill:hover,
+.ask-ai-pill:focus-visible {
+  color: var(--color-text-dark);
+  background: var(--color-brand);
+  border-color: var(--color-brand);
 }
 
 .auth-entry-pill {

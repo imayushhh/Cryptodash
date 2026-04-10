@@ -1,0 +1,1014 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CryptoDash | Ask AI</title>
+
+  <!-- Preconnect hints -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&family=Oswald:wght@600&display=swap" rel="stylesheet" />
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body.advisor-page #investment-budget,
+    body.advisor-page #investment-budget:focus,
+    body.advisor-page #investment-budget:active {
+      color: var(--color-text-primary) !important;
+      -webkit-text-fill-color: var(--color-text-primary) !important;
+      caret-color: var(--color-brand);
+      background-color: #0f172a;
+    }
+
+    body.advisor-page #investment-budget::placeholder {
+      color: var(--color-text-subtle);
+      opacity: 0.95;
+    }
+
+    body.advisor-page #investment-budget:-webkit-autofill,
+    body.advisor-page #investment-budget:-webkit-autofill:hover,
+    body.advisor-page #investment-budget:-webkit-autofill:focus {
+      -webkit-text-fill-color: var(--color-text-primary) !important;
+      -webkit-box-shadow: 0 0 0 1000px #0f172a inset;
+      box-shadow: 0 0 0 1000px #0f172a inset;
+      transition: background-color 5000s ease-in-out 0s;
+    }
+
+    body.advisor-page .advisor-portfolio-card {
+      position: relative;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(28, 46, 74, 0.98), rgba(15, 23, 42, 0.96));
+      border: 1px solid rgba(59, 80, 104, 0.95);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-card-dark);
+      padding: 18px;
+      min-height: 100%;
+    }
+
+    body.advisor-page .advisor-portfolio-card::before {
+      content: "";
+      position: absolute;
+      inset: 0 0 auto 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--color-brand), rgba(34, 211, 238, 0.8));
+    }
+
+    body.advisor-page .advisor-portfolio-card__header {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    body.advisor-page .advisor-portfolio-card__name {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    body.advisor-page .advisor-portfolio-card__badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    body.advisor-page .advisor-portfolio-card__metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 2px;
+    }
+
+    body.advisor-page .advisor-metric {
+      padding: 12px 12px 11px;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.54);
+      border: 1px solid rgba(59, 80, 104, 0.78);
+      min-width: 0;
+    }
+
+    body.advisor-page .advisor-metric__label {
+      display: block;
+      font-size: 0.72rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      color: var(--color-text-muted);
+      margin-bottom: 4px;
+    }
+
+    body.advisor-page .advisor-metric__value {
+      display: block;
+      font-size: 0.98rem;
+      font-weight: 600;
+      color: var(--color-text-primary);
+      line-height: 1.3;
+      word-break: break-word;
+    }
+
+    body.advisor-page .advisor-metric__value.text-success {
+      color: #4ade80 !important;
+    }
+
+    body.advisor-page .advisor-metric__value.text-danger {
+      color: #fb7185 !important;
+    }
+
+    body.advisor-page .advisor-advice-panel {
+      margin-top: 16px;
+      padding: 16px 16px 15px;
+      border-radius: 16px;
+      background:
+        linear-gradient(180deg, rgba(251, 191, 36, 0.12), rgba(15, 23, 42, 0.92));
+      border: 1px solid rgba(251, 191, 36, 0.28);
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    }
+
+    body.advisor-page .advisor-advice-label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--color-brand);
+      margin-bottom: 8px;
+      font-weight: 600;
+    }
+
+    body.advisor-page .advisor-advice-text {
+      color: var(--color-text-primary);
+      font-style: italic;
+      line-height: 1.65;
+      font-size: 0.96rem;
+      margin-bottom: 0;
+    }
+
+    body.advisor-page .advisor-empty-state {
+      color: var(--color-text-secondary);
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px dashed rgba(59, 80, 104, 0.8);
+      border-radius: var(--radius-md);
+      padding: 18px;
+    }
+
+    @media (max-width: 768px) {
+      body.advisor-page .advisor-portfolio-card__header {
+        flex-direction: column;
+      }
+
+      body.advisor-page .advisor-portfolio-card__badges {
+        justify-content: flex-start;
+      }
+
+      body.advisor-page .advisor-portfolio-card__metrics {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body class="advisor-page">
+  <div class="toast-container" id="toastContainer" aria-live="polite"></div>
+
+  <!-- Top global navbar (reuse header from index) -->
+  <header>
+    <div class="top-nav">
+      <div class="top-nav-left">
+        <a href="index.html" class="top-logo">CryptoDash</a>
+        <nav class="top-menu">
+          <a href="index.html">Cryptocurrencies</a>
+          <a href="exchange.html">Exchanges</a>
+          <a href="locations.html">Locations</a>
+        </nav>
+      </div>
+      <div class="top-nav-right">
+        <div class="auth-user-menu d-none" data-auth-user-menu>
+          <button class="auth-user-pill" type="button" data-auth-user-trigger aria-haspopup="true" aria-expanded="false">
+            <i class="bi bi-person-circle"></i>
+            <span data-auth-user-name>Profile</span>
+            <i class="bi bi-chevron-down small"></i>
+          </button>
+          <div class="auth-user-dropdown d-none" data-auth-user-dropdown>
+            <div class="auth-user-meta">
+              <strong data-auth-user-name-full>Profile</strong>
+              <small data-auth-user-email></small>
+            </div>
+            <button class="auth-dropdown-link auth-logout-btn" type="button" data-auth-logout>Logout</button>
+          </div>
+        </div>
+        <a href="auth.html" class="auth-entry-pill" data-auth-signin aria-label="Open login and signup">
+          <i class="bi bi-person-circle"></i>
+          <span>Sign In</span>
+        </a>
+        <a href="ask-ai.html" class="auth-entry-pill ask-ai-pill" aria-current="page">
+          <i class="bi bi-stars"></i>
+          <span>Ask AI</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <main class="news-page-wrapper" style="flex: 1;">
+    <div class="news-breadcrumb">
+      <span>Ask AI</span>
+    </div>
+    <h1 class="news-title-main d-flex align-items-center gap-2">
+      <i class="bi bi-stars" style="color: var(--color-brand);"></i>
+      <span>AI Investment Advisor</span>
+    </h1>
+    <p class="text-secondary mb-4">Get personalized crypto portfolio recommendations powered by LSTM predictions</p>
+
+    <section class="metric-card p-4 mb-4">
+      <form id="advisor-form">
+        <div class="row g-4">
+          <div class="col-12 col-lg-4">
+            <label for="investment-budget" class="form-label small text-uppercase text-secondary fw-semibold">Investment Budget (USD)</label>
+            <input
+              type="number"
+              class="form-control"
+              id="investment-budget"
+              name="budget"
+              min="1"
+              step="0.01"
+              placeholder="e.g. 1000"
+              required
+            />
+          </div>
+
+          <div class="col-12 col-lg-4">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <label class="form-label small text-uppercase text-secondary fw-semibold mb-0">Risk Level</label>
+            </div>
+            <div class="row g-2" role="radiogroup" aria-label="Risk Level">
+              <div class="col-12 col-sm-4">
+                <input class="btn-check" type="radio" name="riskLevel" id="risk-low" value="low" />
+                <label class="btn rounded-pill w-100 py-2 fw-semibold risk-pill" for="risk-low" data-risk-button="low" style="background: var(--color-bg-elevated); color: var(--color-text-secondary); border: 1px solid var(--color-border); cursor: pointer;">Low</label>
+              </div>
+              <div class="col-12 col-sm-4">
+                <input class="btn-check" type="radio" name="riskLevel" id="risk-medium" value="medium" checked />
+                <label class="btn rounded-pill w-100 py-2 fw-semibold risk-pill" for="risk-medium" data-risk-button="medium" style="background: var(--color-bg-elevated); color: var(--color-text-secondary); border: 1px solid var(--color-border); cursor: pointer;">Medium</label>
+              </div>
+              <div class="col-12 col-sm-4">
+                <input class="btn-check" type="radio" name="riskLevel" id="risk-high" value="high" />
+                <label class="btn rounded-pill w-100 py-2 fw-semibold risk-pill" for="risk-high" data-risk-button="high" style="background: var(--color-bg-elevated); color: var(--color-text-secondary); border: 1px solid var(--color-border); cursor: pointer;">High</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-12 col-lg-4">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <label for="num-coins" class="form-label small text-uppercase text-secondary fw-semibold mb-0">Number of Coins</label>
+              <span id="num-coins-value" class="badge rounded-pill" style="background: var(--color-bg-elevated); color: var(--color-text-primary); border: 1px solid var(--color-border);">3</span>
+            </div>
+            <input
+              type="range"
+              class="form-range"
+              id="num-coins"
+              name="numCoins"
+              min="1"
+              max="10"
+              value="3"
+              style="accent-color: var(--color-brand);"
+            />
+          </div>
+        </div>
+
+        <div id="advisor-status" class="alert alert-warning d-none mt-4 mb-0" role="alert" aria-live="polite"></div>
+
+        <div class="mt-4">
+          <button
+            type="submit"
+            class="btn w-100 fw-semibold py-3"
+            id="advisor-submit"
+            style="background: var(--color-brand); color: var(--color-text-dark); border-color: var(--color-brand);"
+          >
+            <span id="advisor-submit-spinner" class="spinner-border spinner-border-sm me-2 d-none" role="status" aria-hidden="true"></span>
+            <span id="advisor-submit-label">Get AI Recommendation</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <section id="advisor-results" class="d-none">
+      <h2 class="news-section-heading">Portfolio Summary</h2>
+      <div class="row row-cols-1 row-cols-md-2 row-cols-xl-4 g-3 mb-4" id="summary-cards"></div>
+
+      <h2 class="news-section-heading mt-4">Portfolio Breakdown</h2>
+      <div class="row g-4" id="portfolio-grid"></div>
+    </section>
+
+    <section class="mt-4">
+      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
+        <h2 class="news-section-heading mb-0">Market Overview</h2>
+        <div id="market-status" class="small text-secondary" aria-live="polite"></div>
+      </div>
+
+      <div class="table-wrap-card">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover align-middle">
+            <thead>
+              <tr>
+                <th scope="col">Coin</th>
+                <th scope="col">Symbol</th>
+                <th scope="col">Signal</th>
+                <th scope="col">Current Price</th>
+                <th scope="col">Day 7 Price</th>
+                <th scope="col">Growth%</th>
+                <th scope="col">Risk</th>
+              </tr>
+            </thead>
+            <tbody id="market-table-body">
+              <tr>
+                <td colspan="7" class="text-center text-secondary py-4">Loading market overview...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Footer reused from index -->
+  <footer class="footer mt-5 pt-4 pb-3">
+    <div class="container">
+      <div class="row">
+
+        <!-- Navigation -->
+        <div class="col-md-4 mb-3">
+          <h6>Navigate</h6>
+          <ul class="list-unstyled">
+            <li><a href="news.html" class="text-decoration-none">News</a></li>
+            <li><a href="currency.html" class="text-decoration-none">Currency Converter</a></li>
+          </ul>
+        </div>
+
+        <!-- Legal Links -->
+        <div class="col-md-4 mb-3">
+          <h6>Legal</h6>
+          <ul class="list-unstyled">
+            <li><a href="terms.html" class="text-decoration-none">Terms of Service</a></li>
+            <li><a href="https://imayushhh.github.io/Portfolio/" class="text-decoration-none">Privacy Policy</a></li>
+            <li><a href="https://imayushhh.github.io/Portfolio/" class="text-decoration-none">Disclaimer</a></li>
+          </ul>
+        </div>
+
+        <!-- Social + Contact -->
+        <div class="col-md-4 mb-3">
+          <h6>Connect</h6>
+          <a href="mailto:ayush.ag3465@gmail.com" class="me-3" title="Email Us"><i class="bi bi-envelope" style="font-size: 1.2rem;"></i></a>
+          <a href="https://github.com/imayushhh" class="me-3" title="Github"><i class="bi bi-github"></i></a>
+          <a href="https://www.linkedin.com/in/ayush-gupta-654ab7195/" class="me-3" title="LinkedIn"><i class="bi bi-linkedin"></i></a>
+        </div>
+
+      </div>
+      <hr class="border-secondary" />
+      <p class="text-center small mb-0">&copy; 2025 CryptoDash. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <!-- Shared global market cap logic (no-op if card not present) -->
+  <script src="global-metrics.js"></script>
+  <script type="module" src="auth-nav.js"></script>
+  <script>
+    (function () {
+      const advisorForm = document.getElementById("advisor-form");
+      const advisorStatusEl = document.getElementById("advisor-status");
+      const advisorResultsEl = document.getElementById("advisor-results");
+      const summaryCardsEl = document.getElementById("summary-cards");
+      const portfolioGridEl = document.getElementById("portfolio-grid");
+      const advisorSubmitBtn = document.getElementById("advisor-submit");
+      const advisorSubmitSpinner = document.getElementById("advisor-submit-spinner");
+      const advisorSubmitLabel = document.getElementById("advisor-submit-label");
+      const budgetInput = document.getElementById("investment-budget");
+      const riskInputs = Array.from(document.querySelectorAll('input[name="riskLevel"]'));
+      const riskButtons = Array.from(document.querySelectorAll("[data-risk-button]"));
+      const numCoinsInput = document.getElementById("num-coins");
+      const numCoinsValueEl = document.getElementById("num-coins-value");
+      const marketStatusEl = document.getElementById("market-status");
+      const marketTableBodyEl = document.getElementById("market-table-body");
+
+      function toNumber(value, fallback) {
+        const number = Number(value);
+        return Number.isFinite(number) ? number : fallback;
+      }
+
+      function normalizeRisk(value) {
+        const risk = String(value || "").trim().toLowerCase();
+        if (risk === "low" || risk === "medium" || risk === "high") {
+          return risk;
+        }
+        return "medium";
+      }
+
+      function normalizeSignal(value) {
+        const signal = String(value || "").trim().toUpperCase();
+        if (signal === "BUY" || signal === "HOLD" || signal === "AVOID") {
+          return signal;
+        }
+        return "HOLD";
+      }
+
+      function titleCase(value) {
+        const text = String(value || "").trim();
+        if (!text) {
+          return "";
+        }
+        return text.charAt(0).toUpperCase() + text.slice(1).toLowerCase();
+      }
+
+      function formatCurrency(value) {
+        const number = toNumber(value, null);
+        if (number === null) {
+          return "--";
+        }
+
+        const digits = Math.abs(number) < 1 ? 6 : 2;
+        return new Intl.NumberFormat("en-US", {
+          style: "currency",
+          currency: "USD",
+          minimumFractionDigits: digits,
+          maximumFractionDigits: digits
+        }).format(number);
+      }
+
+      function formatPercent(value) {
+        const number = toNumber(value, null);
+        if (number === null) {
+          return "--";
+        }
+
+        return `${number >= 0 ? "+" : ""}${number.toFixed(2)}%`;
+      }
+
+      function setBadgeStyle(element, tone) {
+        const palette = {
+          success: {
+            background: "var(--color-success)",
+            color: "var(--color-text-primary)",
+            border: "1px solid transparent"
+          },
+          warning: {
+            background: "var(--color-warning)",
+            color: "var(--color-text-dark)",
+            border: "1px solid transparent"
+          },
+          danger: {
+            background: "var(--color-danger)",
+            color: "var(--color-text-primary)",
+            border: "1px solid transparent"
+          },
+          neutral: {
+            background: "var(--color-bg-elevated)",
+            color: "var(--color-text-secondary)",
+            border: "1px solid var(--color-border)"
+          },
+          brand: {
+            background: "var(--color-brand)",
+            color: "var(--color-text-dark)",
+            border: "1px solid transparent"
+          }
+        };
+
+        const colors = palette[tone] || palette.neutral;
+        element.style.background = colors.background;
+        element.style.color = colors.color;
+        element.style.border = colors.border;
+      }
+
+      function createBadge(text, tone, extraClasses) {
+        const badge = document.createElement("span");
+        badge.className = "badge rounded-pill text-uppercase fw-semibold";
+        if (extraClasses) {
+          badge.classList.add(...extraClasses.split(" ").filter(Boolean));
+        }
+        badge.textContent = text;
+        setBadgeStyle(badge, tone);
+        return badge;
+      }
+
+      function getRiskTone(risk) {
+        const normalized = normalizeRisk(risk);
+        if (normalized === "low") {
+          return "success";
+        }
+        if (normalized === "high") {
+          return "danger";
+        }
+        return "warning";
+      }
+
+      function getSignalTone(signal) {
+        const normalized = normalizeSignal(signal);
+        if (normalized === "BUY") {
+          return "success";
+        }
+        if (normalized === "AVOID") {
+          return "danger";
+        }
+        return "warning";
+      }
+
+      function createMetricBlock(label, value, valueClass) {
+        const block = document.createElement("div");
+        block.className = "advisor-metric";
+
+        const labelEl = document.createElement("div");
+        labelEl.className = "advisor-metric__label";
+        labelEl.textContent = label;
+
+        const valueEl = document.createElement("div");
+        valueEl.className = "advisor-metric__value";
+        if (valueClass) {
+          valueEl.classList.add(...valueClass.split(" ").filter(Boolean));
+        } else {
+          valueEl.classList.add("text-white");
+        }
+        valueEl.textContent = value;
+
+        block.appendChild(labelEl);
+        block.appendChild(valueEl);
+        return block;
+      }
+
+      function setAdvisorStatus(message, tone, loading) {
+        advisorStatusEl.className = "alert mt-4 mb-0";
+        advisorStatusEl.classList.add(tone === "danger" ? "alert-danger" : tone === "success" ? "alert-success" : tone === "warning" ? "alert-warning" : "alert-info");
+        advisorStatusEl.style.background = "var(--color-bg-elevated)";
+        advisorStatusEl.style.border = "1px solid var(--color-border)";
+        advisorStatusEl.style.borderLeft = tone === "danger"
+          ? "4px solid var(--color-danger)"
+          : tone === "warning"
+            ? "4px solid var(--color-warning)"
+            : tone === "success"
+              ? "4px solid var(--color-success)"
+              : "4px solid var(--color-brand)";
+        advisorStatusEl.style.color = "var(--color-text-secondary)";
+        advisorStatusEl.innerHTML = "";
+
+        const row = document.createElement("div");
+        row.className = "d-flex align-items-center gap-2";
+
+        if (loading) {
+          const spinner = document.createElement("span");
+          spinner.className = "spinner-border spinner-border-sm";
+          spinner.style.color = "var(--color-brand)";
+          spinner.setAttribute("role", "status");
+          spinner.setAttribute("aria-hidden", "true");
+          row.appendChild(spinner);
+        }
+
+        const text = document.createElement("span");
+        text.textContent = message;
+        row.appendChild(text);
+
+        advisorStatusEl.appendChild(row);
+        advisorStatusEl.classList.remove("d-none");
+      }
+
+      function clearAdvisorStatus() {
+        advisorStatusEl.classList.add("d-none");
+        advisorStatusEl.innerHTML = "";
+      }
+
+      function setMarketStatus(message, tone, loading) {
+        marketStatusEl.className = "small d-inline-flex align-items-center gap-2";
+        marketStatusEl.classList.add(tone === "danger" ? "text-danger" : tone === "success" ? "text-success" : tone === "warning" ? "text-warning" : "text-secondary");
+        marketStatusEl.style.color = tone === "danger"
+          ? "var(--color-danger)"
+          : tone === "warning"
+            ? "var(--color-warning)"
+            : tone === "success"
+              ? "var(--color-success)"
+              : "var(--color-text-secondary)";
+        marketStatusEl.innerHTML = "";
+
+        if (loading) {
+          const spinner = document.createElement("span");
+          spinner.className = "spinner-border spinner-border-sm";
+          spinner.style.color = "var(--color-brand)";
+          spinner.setAttribute("role", "status");
+          spinner.setAttribute("aria-hidden", "true");
+          marketStatusEl.appendChild(spinner);
+        }
+
+        const text = document.createElement("span");
+        text.textContent = message;
+        marketStatusEl.appendChild(text);
+      }
+
+      function clearMarketStatus() {
+        marketStatusEl.className = "small text-secondary";
+        marketStatusEl.style.color = "var(--color-text-secondary)";
+        marketStatusEl.textContent = "";
+      }
+
+      function getAdvisorErrorMessage(payload, fallbackMessage) {
+        if (payload && typeof payload.error === "string" && payload.error.trim().length > 0) {
+          return payload.error.trim();
+        }
+        return fallbackMessage;
+      }
+
+      function normalizeCoinEntry(entry) {
+        return {
+          coinId: entry.coin_id || entry.coinId || "",
+          name: entry.name || entry.coin_id || entry.coinId || "Unknown",
+          symbol: String(entry.symbol || entry.ticker || entry.coin_id || entry.coinId || "").toUpperCase(),
+          riskTier: normalizeRisk(entry.risk_tier || entry.riskTier || entry.risk),
+          signal: normalizeSignal(entry.signal),
+          currentPrice: toNumber(entry.current_price || entry.currentPrice, 0),
+          day7Price: toNumber(entry.predicted_price_day7 || entry.predictedPriceDay7 || entry.predicted_price || entry.predictedPrice, 0),
+          growthPercent: toNumber(entry.growth_percent || entry.growthPercent, 0),
+          advice: String(entry.advice || "").trim(),
+          investAmount: toNumber(entry.invest_amount || entry.investAmount, 0),
+          expectedReturn: toNumber(entry.expected_return || entry.expectedReturn, 0)
+        };
+      }
+
+      function extractCoinList(payload) {
+        if (Array.isArray(payload)) {
+          return payload;
+        }
+
+        if (payload && Array.isArray(payload.coins)) {
+          return payload.coins;
+        }
+
+        return [];
+      }
+
+      function extractPortfolioList(payload) {
+        if (Array.isArray(payload)) {
+          return payload;
+        }
+
+        if (payload && Array.isArray(payload.portfolio)) {
+          return payload.portfolio;
+        }
+
+        return [];
+      }
+
+      function updateRiskButtonStyles() {
+        const selected = riskInputs.find((input) => input.checked);
+        const selectedValue = selected ? normalizeRisk(selected.value) : "medium";
+
+        riskButtons.forEach((button) => {
+          const buttonRisk = normalizeRisk(button.getAttribute("data-risk-button"));
+          const isSelected = buttonRisk === selectedValue;
+          if (isSelected) {
+            if (buttonRisk === "low") {
+              setBadgeStyle(button, "success");
+            } else if (buttonRisk === "high") {
+              setBadgeStyle(button, "danger");
+            } else {
+              setBadgeStyle(button, "warning");
+            }
+          } else {
+            setBadgeStyle(button, "neutral");
+          }
+        });
+      }
+
+      function updateSliderValue() {
+        numCoinsValueEl.textContent = String(numCoinsInput.value || 3);
+      }
+
+      function renderSummaryCards(summary) {
+        summaryCardsEl.innerHTML = "";
+
+        const cards = [
+          {
+            label: "Total Budget",
+            value: formatCurrency(summary.budget)
+          },
+          {
+            label: "Expected Return ($)",
+            value: formatCurrency(summary.totalExpectedReturn)
+          },
+          {
+            label: "Expected Return (%)",
+            value: formatPercent(summary.expectedReturnPct),
+            valueClass: summary.expectedReturnPct >= 0 ? "text-success" : "text-danger"
+          },
+          {
+            label: "Risk Level",
+            value: titleCase(summary.risk).toUpperCase()
+          }
+        ];
+
+        cards.forEach((item) => {
+          const column = document.createElement("div");
+          const card = document.createElement("div");
+          card.className = "metric-card h-100";
+
+          const labelEl = document.createElement("div");
+          labelEl.className = "metric-label";
+          labelEl.textContent = item.label;
+
+          const valueEl = document.createElement("div");
+          valueEl.className = "metric-value";
+          if (item.valueClass) {
+            valueEl.classList.add(...item.valueClass.split(" ").filter(Boolean));
+          }
+          valueEl.textContent = item.value;
+
+          card.appendChild(labelEl);
+          card.appendChild(valueEl);
+          column.appendChild(card);
+          summaryCardsEl.appendChild(column);
+        });
+      }
+
+      function renderPortfolioCards(portfolio) {
+        portfolioGridEl.innerHTML = "";
+
+        if (!portfolio.length) {
+          const empty = document.createElement("div");
+          empty.className = "col-12";
+
+          const card = document.createElement("div");
+          card.className = "advisor-empty-state";
+
+          const text = document.createElement("div");
+          text.className = "text-secondary mb-0";
+          text.textContent = "No portfolio recommendations available yet.";
+
+          card.appendChild(text);
+          empty.appendChild(card);
+          portfolioGridEl.appendChild(empty);
+          return;
+        }
+
+        portfolio.forEach((coin) => {
+          const column = document.createElement("div");
+          column.className = "col-12 col-xl-6";
+
+          const card = document.createElement("div");
+          card.className = "advisor-portfolio-card h-100";
+
+          const header = document.createElement("div");
+          header.className = "advisor-portfolio-card__header";
+
+          const nameGroup = document.createElement("div");
+          nameGroup.className = "advisor-portfolio-card__name";
+          const nameRow = document.createElement("div");
+          nameRow.className = "d-flex align-items-center flex-wrap gap-2";
+
+          const nameEl = document.createElement("h3");
+          nameEl.className = "h6 mb-0 text-white";
+          nameEl.textContent = coin.name;
+
+          const symbolBadge = createBadge(coin.symbol || coin.coinId || "--", "neutral", "px-3 py-2");
+
+          nameRow.appendChild(nameEl);
+          nameRow.appendChild(symbolBadge);
+          nameGroup.appendChild(nameRow);
+
+          const badgeStack = document.createElement("div");
+          badgeStack.className = "advisor-portfolio-card__badges";
+          badgeStack.appendChild(createBadge(titleCase(coin.riskTier).toUpperCase(), getRiskTone(coin.riskTier), "px-3 py-2"));
+          badgeStack.appendChild(createBadge(coin.signal, getSignalTone(coin.signal), "px-3 py-2"));
+
+          header.appendChild(nameGroup);
+          header.appendChild(badgeStack);
+          card.appendChild(header);
+
+          const metricsRow = document.createElement("div");
+          metricsRow.className = "advisor-portfolio-card__metrics";
+          metricsRow.appendChild(createMetricBlock("Current Price", formatCurrency(coin.currentPrice)));
+          metricsRow.appendChild(createMetricBlock("Predicted Price Day 7", formatCurrency(coin.day7Price)));
+          metricsRow.appendChild(createMetricBlock("Growth %", formatPercent(coin.growthPercent), coin.growthPercent >= 0 ? "text-success" : "text-danger"));
+          metricsRow.appendChild(createMetricBlock("Invest Amount", formatCurrency(coin.investAmount)));
+          metricsRow.appendChild(createMetricBlock("Expected Return ($)", formatCurrency(coin.expectedReturn), coin.expectedReturn >= 0 ? "text-success" : "text-danger"));
+          card.appendChild(metricsRow);
+
+          const adviceBox = document.createElement("div");
+          adviceBox.className = "advisor-advice-panel";
+
+          const adviceLabel = document.createElement("div");
+          adviceLabel.className = "advisor-advice-label";
+          adviceLabel.innerHTML = '<i class="bi bi-lightbulb-fill"></i><span>Advice</span>';
+
+          const adviceText = document.createElement("div");
+          adviceText.className = "advisor-advice-text fst-italic";
+          adviceText.textContent = coin.advice || "No advice available.";
+
+          adviceBox.appendChild(adviceLabel);
+          adviceBox.appendChild(adviceText);
+          card.appendChild(adviceBox);
+
+          column.appendChild(card);
+          portfolioGridEl.appendChild(column);
+        });
+      }
+
+      function renderMarketTable(coins) {
+        marketTableBodyEl.innerHTML = "";
+
+        if (!coins.length) {
+          const row = document.createElement("tr");
+          const cell = document.createElement("td");
+          cell.colSpan = 7;
+          cell.className = "text-center text-secondary py-4";
+          cell.textContent = "No market data available yet.";
+          row.appendChild(cell);
+          marketTableBodyEl.appendChild(row);
+          return;
+        }
+
+        coins.forEach((coin) => {
+          const row = document.createElement("tr");
+
+          const coinCell = document.createElement("td");
+          const coinName = document.createElement("div");
+          coinName.className = "fw-semibold text-white";
+          coinName.textContent = coin.name;
+          coinCell.appendChild(coinName);
+          row.appendChild(coinCell);
+
+          const symbolCell = document.createElement("td");
+          symbolCell.appendChild(createBadge(coin.symbol || coin.coinId || "--", "neutral", "px-3 py-2"));
+          row.appendChild(symbolCell);
+
+          const signalCell = document.createElement("td");
+          signalCell.appendChild(createBadge(coin.signal, getSignalTone(coin.signal), "px-3 py-2"));
+          row.appendChild(signalCell);
+
+          const currentCell = document.createElement("td");
+          currentCell.textContent = formatCurrency(coin.currentPrice);
+          row.appendChild(currentCell);
+
+          const day7Cell = document.createElement("td");
+          day7Cell.textContent = formatCurrency(coin.day7Price);
+          row.appendChild(day7Cell);
+
+          const growthCell = document.createElement("td");
+          growthCell.className = coin.growthPercent >= 0 ? "text-success fw-semibold" : "text-danger fw-semibold";
+          growthCell.textContent = formatPercent(coin.growthPercent);
+          row.appendChild(growthCell);
+
+          const riskCell = document.createElement("td");
+          riskCell.appendChild(createBadge(titleCase(coin.riskTier).toUpperCase(), getRiskTone(coin.riskTier), "px-3 py-2"));
+          row.appendChild(riskCell);
+
+          marketTableBodyEl.appendChild(row);
+        });
+      }
+
+      function handleAdvisorError(response, payload) {
+        const errorMessage = getAdvisorErrorMessage(payload, "Could not get an AI recommendation.");
+        if (response.status === 503 && errorMessage.toLowerCase().includes("ai service unavailable")) {
+          setAdvisorStatus("AI service is waking up, please wait up to 60 seconds...", "warning", false);
+          return;
+        }
+
+        setAdvisorStatus(errorMessage, "danger", false);
+      }
+
+      async function loadMarketOverview() {
+        setMarketStatus("AI service is waking up, please wait up to 60 seconds...", "warning", true);
+        marketTableBodyEl.innerHTML = "";
+
+        try {
+          const response = await fetch("/api/prediction/all", {
+            headers: {
+              Accept: "application/json"
+            }
+          });
+
+          const payload = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            const message = getAdvisorErrorMessage(payload, "Could not load market overview.");
+            if (response.status === 503 && message.toLowerCase().includes("ai service unavailable")) {
+              setMarketStatus("AI service is waking up, please wait up to 60 seconds...", "warning", false);
+            } else {
+              setMarketStatus(message, "danger", false);
+            }
+            renderMarketTable([]);
+            return;
+          }
+
+          const coins = extractCoinList(payload)
+            .map(normalizeCoinEntry)
+            .sort((left, right) => right.growthPercent - left.growthPercent);
+
+          renderMarketTable(coins);
+          clearMarketStatus();
+        } catch (error) {
+          setMarketStatus("Could not load market overview. Please try again.", "danger", false);
+          renderMarketTable([]);
+        }
+      }
+
+      function showAdvisorLoading() {
+        advisorSubmitBtn.disabled = true;
+        advisorSubmitSpinner.classList.remove("d-none");
+        advisorSubmitLabel.textContent = "Analyzing market data...";
+        setAdvisorStatus("AI service is waking up, please wait up to 60 seconds...", "warning", true);
+      }
+
+      function hideAdvisorLoading() {
+        advisorSubmitBtn.disabled = false;
+        advisorSubmitSpinner.classList.add("d-none");
+        advisorSubmitLabel.textContent = "Get AI Recommendation";
+      }
+
+      function getSelectedRisk() {
+        const selected = riskInputs.find((input) => input.checked);
+        return selected ? normalizeRisk(selected.value) : "medium";
+      }
+
+      async function submitAdvisorRequest(event) {
+        event.preventDefault();
+
+        const budget = toNumber(budgetInput.value, 0);
+        if (!(budget > 0)) {
+          setAdvisorStatus("Please enter a valid investment budget greater than 0.", "danger", false);
+          budgetInput.focus();
+          return;
+        }
+
+        const payload = {
+          budget: budget,
+          risk: getSelectedRisk(),
+          numCoins: toNumber(numCoinsInput.value, 3)
+        };
+
+        showAdvisorLoading();
+
+        try {
+          const response = await fetch("/api/advisor", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json"
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await response.json().catch(() => ({}));
+
+          if (!response.ok) {
+            handleAdvisorError(response, data);
+            advisorResultsEl.classList.add("d-none");
+            return;
+          }
+
+          const portfolio = extractPortfolioList(data).map(normalizeCoinEntry);
+          renderSummaryCards({
+            budget: data.budget,
+            totalExpectedReturn: data.total_expected_return,
+            expectedReturnPct: data.expected_return_pct,
+            risk: data.risk
+          });
+          renderPortfolioCards(portfolio);
+          clearAdvisorStatus();
+          advisorResultsEl.classList.remove("d-none");
+          advisorResultsEl.scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch (error) {
+          setAdvisorStatus("Could not reach the AI advisor. Please try again.", "danger", false);
+          advisorResultsEl.classList.add("d-none");
+        } finally {
+          hideAdvisorLoading();
+        }
+      }
+
+      riskInputs.forEach((input) => {
+        input.addEventListener("change", updateRiskButtonStyles);
+      });
+
+      riskButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const risk = normalizeRisk(button.getAttribute("data-risk-button"));
+          const input = riskInputs.find((item) => normalizeRisk(item.value) === risk);
+          if (input) {
+            input.checked = true;
+            updateRiskButtonStyles();
+          }
+        });
+      });
+
+      numCoinsInput.addEventListener("input", updateSliderValue);
+      advisorForm.addEventListener("submit", submitAdvisorRequest);
+
+      updateRiskButtonStyles();
+      updateSliderValue();
+      loadMarketOverview();
+    })();
+  </script>
+</body>
+</html>
