@@ -51,29 +51,63 @@
         </a>
       </div>
     </div>
-    <div class="secondary-tabs-wrapper">
-      <div class="secondary-tabs">
-        <button class="active" type="button">Top Exchanges</button>
-      </div>
-    </div>
   </header>
 
-  <div class="tagline-wrapper">
-    <div class="tagline-inner">
-      <span class="moving-text">Find trusted exchanges with live trust score and BTC volume.</span>
-    </div>
-  </div>
+  <main class="exchange-page-wrapper" style="flex: 1;">
+    <section class="exchange-page-hero mb-4">
+      <div class="news-breadcrumb mb-2">
+        <span>Exchange Desk</span>
+      </div>
+      <h1 class="news-title-main d-flex align-items-center justify-content-center gap-2 mb-3">
+        <i class="bi bi-building" style="color: var(--color-brand);"></i>
+        <span>Top Crypto Exchanges Ranked by Market Cap</span>
+      </h1>
 
-  <main class="container mt-4 mb-5" style="flex: 1;">
-    <div class="table-wrap-card p-3 p-md-4">
-      <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
-        <h4 class="mb-0" style="color: #f9fafb;">Exchange Directory</h4>
-        <small id="exchangeCountInfo" class="text-muted">Loading exchanges...</small>
+      <div class="metrics-row exchange-summary-row" id="exchangeSummaryRow">
+        <div class="metric-card exchange-summary-card">
+          <div class="metric-label">Exchanges Loaded</div>
+          <div class="metric-value" id="exchangeSummaryCount">--</div>
+          <div class="metric-sub" id="exchangeSummaryCountSub">Live feed</div>
+        </div>
+        <div class="metric-card exchange-summary-card">
+          <div class="metric-label">Average Trust Score</div>
+          <div class="metric-value" id="exchangeSummaryTrust">--</div>
+          <div class="metric-sub" id="exchangeSummaryTrustSub">Average trust score</div>
+        </div>
+        <div class="metric-card exchange-summary-card">
+          <div class="metric-label">24h BTC Volume</div>
+          <div class="metric-value" id="exchangeSummaryVolume">--</div>
+          <div class="metric-sub" id="exchangeSummaryVolumeSub">Across all results</div>
+        </div>
       </div>
 
-      <div id="exchangeError" class="alert alert-danger d-none" role="alert"></div>
+    </section>
 
-      <div id="exchangeGrid" class="exchange-grid" aria-live="polite"></div>
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+      <div>
+        <h2 class="news-section-heading mb-1">Exchange Directory</h2>
+        <p class="mb-0 text-muted small">Sorted by trust score and BTC trading volume.</p>
+      </div>
+      <small id="exchangeCountInfo" class="text-muted">Loading exchanges...</small>
+    </div>
+
+    <div id="exchangeError" class="alert alert-danger d-none" role="alert"></div>
+
+    <div class="table-wrap-card">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle exchange-table">
+          <thead>
+            <tr>
+              <th scope="col">#</th>
+              <th scope="col">Name</th>
+              <th scope="col">Trust Score</th>
+              <th scope="col">Trust Rank</th>
+              <th scope="col">24h BTC Volume</th>
+            </tr>
+          </thead>
+          <tbody id="exchangeTableBody" aria-live="polite"></tbody>
+        </table>
+      </div>
 
       <div class="mt-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
         <small id="exchangeRangeInfo" class="text-muted">Showing --</small>
@@ -123,7 +157,7 @@
 
       </div>
       <hr class="border-secondary" />
-      <p class="text-center small mb-0">&copy; 2025 CryptoDash. All rights reserved.</p>
+      <p class="text-center small mb-0">&copy; 2026 CryptoDash. All rights reserved.</p>
     </div>
   </footer>
 
@@ -132,7 +166,7 @@
   <script type="module" src="auth-nav.js"></script>
 
   <script>
-    const EXCHANGE_PAGE_SIZE = 25;
+    const EXCHANGE_PAGE_SIZE = 15;
     let exchanges = [];
     let exchangePage = 1;
 
@@ -146,24 +180,51 @@
     }
 
     function renderExchangeCards() {
-      const grid = document.getElementById("exchangeGrid");
+      const tableBody = document.getElementById("exchangeTableBody");
       const countInfo = document.getElementById("exchangeCountInfo");
       const rangeInfo = document.getElementById("exchangeRangeInfo");
       const pageInfo = document.getElementById("exchangePageInfo");
       const prevItem = document.getElementById("exchangePrevItem");
       const nextItem = document.getElementById("exchangeNextItem");
+      const summaryCount = document.getElementById("exchangeSummaryCount");
+      const summaryCountSub = document.getElementById("exchangeSummaryCountSub");
+      const summaryTrust = document.getElementById("exchangeSummaryTrust");
+      const summaryTrustSub = document.getElementById("exchangeSummaryTrustSub");
+      const summaryVolume = document.getElementById("exchangeSummaryVolume");
+      const summaryVolumeSub = document.getElementById("exchangeSummaryVolumeSub");
 
-      if (!grid) return;
+      if (!tableBody) return;
 
       if (!Array.isArray(exchanges) || exchanges.length === 0) {
-        grid.innerHTML = `<div class="text-muted">No exchange data available.</div>`;
+        tableBody.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-4">No exchange data available.</td></tr>`;
         countInfo.textContent = "0 exchanges";
         rangeInfo.textContent = "Showing 0";
         pageInfo.textContent = "1 / 1";
         prevItem.classList.add("disabled");
         nextItem.classList.add("disabled");
+        summaryCount.textContent = "0";
+        summaryCountSub.textContent = "No data loaded";
+        summaryTrust.textContent = "--";
+        summaryTrustSub.textContent = "Average trust score";
+        summaryVolume.textContent = "--";
+        summaryVolumeSub.textContent = "24h BTC volume";
         return;
       }
+
+      const sortedExchanges = exchanges.slice().sort((left, right) => {
+        const leftScore = Number.isFinite(left.trust_score) ? left.trust_score : -1;
+        const rightScore = Number.isFinite(right.trust_score) ? right.trust_score : -1;
+
+        if (rightScore !== leftScore) {
+          return rightScore - leftScore;
+        }
+
+        const leftVolume = Number.isFinite(left.trade_volume_24h_btc) ? left.trade_volume_24h_btc : 0;
+        const rightVolume = Number.isFinite(right.trade_volume_24h_btc) ? right.trade_volume_24h_btc : 0;
+        return rightVolume - leftVolume;
+      });
+
+      exchanges = sortedExchanges;
 
       const total = exchanges.length;
       const totalPages = Math.max(1, Math.ceil(total / EXCHANGE_PAGE_SIZE));
@@ -173,38 +234,88 @@
       const start = (exchangePage - 1) * EXCHANGE_PAGE_SIZE;
       const end = Math.min(start + EXCHANGE_PAGE_SIZE, total);
       const pageItems = exchanges.slice(start, end);
+      const validTrustScores = exchanges
+        .map((exchange) => Number.isFinite(exchange.trust_score) ? exchange.trust_score : null)
+        .filter((score) => score !== null);
+      const averageTrustScore = validTrustScores.length > 0
+        ? validTrustScores.reduce((sum, score) => sum + score, 0) / validTrustScores.length
+        : null;
+      const totalBtcVolume = exchanges.reduce((sum, exchange) => sum + (Number.isFinite(exchange.trade_volume_24h_btc) ? exchange.trade_volume_24h_btc : 0), 0);
+      const topExchange = exchanges.find((exchange) => Number.isFinite(exchange.trust_score)) || exchanges[0];
 
-      grid.innerHTML = "";
-      pageItems.forEach((exchange) => {
+      tableBody.innerHTML = "";
+      pageItems.forEach((exchange, index) => {
         const trustScore = Number.isInteger(exchange.trust_score) ? exchange.trust_score : "--";
         const trustScoreRank = Number.isInteger(exchange.trust_score_rank) ? exchange.trust_score_rank : "--";
         const symbol = exchange.symbol ? exchange.symbol.toUpperCase() : "--";
         const volume = formatBtcVolume(exchange.trade_volume_24h_btc);
+        const row = document.createElement("tr");
 
-        const card = document.createElement("article");
-        card.className = "exchange-card";
-        card.innerHTML = `
-          <div class="d-flex align-items-center gap-2 mb-2">
-            <img src="${exchange.image || "https://via.placeholder.com/36?text=EX"}" alt="${exchange.name || "Exchange"} logo" class="exchange-logo" loading="lazy" />
-            <div>
-              <div class="exchange-name">${exchange.name || "Unknown Exchange"}</div>
-              <div class="exchange-symbol">${symbol}</div>
-            </div>
-          </div>
-          <div class="exchange-stat-row">
-            <span>Trust Score</span>
-            <strong>${trustScore}</strong>
-          </div>
-          <div class="exchange-stat-row">
-            <span>Trust Rank</span>
-            <strong>#${trustScoreRank}</strong>
-          </div>
-          <div class="exchange-stat-row">
-            <span>24h Volume</span>
-            <strong>${volume}</strong>
-          </div>
-        `;
-        grid.appendChild(card);
+        const rowNumberCell = document.createElement("td");
+        rowNumberCell.className = "fw-semibold";
+        rowNumberCell.textContent = String(start + index + 1);
+
+        const nameCell = document.createElement("td");
+        const nameWrap = document.createElement("div");
+        nameWrap.className = "d-flex align-items-center gap-2";
+
+        const logo = document.createElement("img");
+        logo.src = exchange.image || "https://via.placeholder.com/36?text=EX";
+        logo.alt = (exchange.name || "Exchange") + " logo";
+        logo.className = "exchange-logo";
+        logo.loading = "lazy";
+
+        const nameGroup = document.createElement("div");
+        const name = document.createElement("div");
+        name.className = "exchange-name";
+        name.textContent = exchange.name || "Unknown Exchange";
+        const symbolNode = document.createElement("div");
+        symbolNode.className = "exchange-symbol";
+        symbolNode.textContent = symbol;
+
+        nameGroup.appendChild(name);
+        nameGroup.appendChild(symbolNode);
+        nameWrap.appendChild(logo);
+        nameWrap.appendChild(nameGroup);
+        nameCell.appendChild(nameWrap);
+
+        const scoreCell = document.createElement("td");
+        const scoreBadge = document.createElement("span");
+        scoreBadge.className = "badge rounded-pill fw-semibold px-3 py-2";
+        if (Number.isFinite(exchange.trust_score)) {
+          scoreBadge.textContent = trustScore;
+          if (exchange.trust_score >= 8) {
+            scoreBadge.style.background = "rgba(22, 163, 74, 0.16)";
+            scoreBadge.style.color = "#4ade80";
+          } else if (exchange.trust_score >= 5) {
+            scoreBadge.style.background = "rgba(245, 158, 11, 0.18)";
+            scoreBadge.style.color = "#fbbf24";
+          } else {
+            scoreBadge.style.background = "rgba(185, 28, 28, 0.18)";
+            scoreBadge.style.color = "#f87171";
+          }
+        } else {
+          scoreBadge.textContent = "--";
+          scoreBadge.style.background = "rgba(255, 255, 255, 0.06)";
+          scoreBadge.style.color = "var(--color-text-muted)";
+        }
+        scoreCell.appendChild(scoreBadge);
+
+        const trustRankCell = document.createElement("td");
+        trustRankCell.className = "fw-semibold";
+        trustRankCell.textContent = trustScoreRank === "--" ? "--" : `#${trustScoreRank}`;
+
+        const volumeCell = document.createElement("td");
+        volumeCell.className = Number.isFinite(exchange.trade_volume_24h_btc) ? "fw-semibold text-white" : "text-muted";
+        volumeCell.textContent = volume;
+
+        row.appendChild(rowNumberCell);
+        row.appendChild(nameCell);
+        row.appendChild(scoreCell);
+        row.appendChild(trustRankCell);
+        row.appendChild(volumeCell);
+
+        tableBody.appendChild(row);
       });
 
       countInfo.textContent = `${total} exchanges loaded`;
@@ -212,6 +323,15 @@
       pageInfo.textContent = `${exchangePage} / ${totalPages}`;
       prevItem.classList.toggle("disabled", exchangePage === 1);
       nextItem.classList.toggle("disabled", exchangePage === totalPages);
+
+      summaryCount.textContent = total.toString();
+      summaryCountSub.textContent = topExchange ? `Top exchange: ${topExchange.name || "Unknown"}` : "Live feed";
+      summaryTrust.textContent = averageTrustScore === null ? "--" : `${averageTrustScore.toFixed(1)} / 10`;
+      summaryTrustSub.textContent = topExchange && Number.isFinite(topExchange.trust_score)
+        ? `Best score: ${topExchange.name || "Unknown"}`
+        : "Average trust score";
+      summaryVolume.textContent = formatBtcVolume(totalBtcVolume);
+      summaryVolumeSub.textContent = `Across ${total} exchanges`;
     }
 
     function changeExchangePage(delta) {
@@ -221,9 +341,9 @@
     }
 
     function showExchangeSkeletons() {
-      const grid = document.getElementById("exchangeGrid");
-      grid.innerHTML = Array.from({length: 8}, () =>
-        '<div class="exchange-card"><div class="skeleton-row"><div class="skeleton skeleton-circle"></div><div class="skeleton skeleton-line skeleton-line-lg"></div></div><div class="skeleton skeleton-line skeleton-line-md mt-2"></div><div class="skeleton skeleton-line skeleton-line-md mt-1"></div><div class="skeleton skeleton-line skeleton-line-md mt-1"></div></div>'
+      const tableBody = document.getElementById("exchangeTableBody");
+      tableBody.innerHTML = Array.from({length: 8}, () =>
+        '<tr><td><div class="skeleton skeleton-line skeleton-line-sm"></div></td><td><div class="skeleton-row" style="border-bottom: 0; padding: 0;"><div class="skeleton skeleton-circle"></div><div class="skeleton skeleton-line skeleton-line-lg"></div></div></td><td><div class="skeleton skeleton-line skeleton-line-sm"></div></td><td><div class="skeleton skeleton-line skeleton-line-sm"></div></td><td><div class="skeleton skeleton-line skeleton-line-md"></div></td></tr>'
       ).join('');
     }
 

@@ -53,25 +53,43 @@
       </div>
     </div>
 
-    <div class="secondary-tabs-wrapper">
-      <div class="secondary-tabs">
-        <button class="active" type="button">All Locations</button>
-      </div>
-    </div>
   </header>
 
-  <div class="tagline-wrapper">
-    <div class="tagline-inner">
-      <span class="moving-text">Explore trusted crypto locations and find addresses in seconds.</span>
-    </div>
-  </div>
-
-  <main class="container mt-4 mb-5 locations-page-wrapper" style="flex: 1;">
-    <section class="locations-hero">
-      <h1 class="locations-title">Crypto Locations Directory</h1>
-      <p class="locations-subtitle mb-0">
-        Find exchange desks, ATMs, merchants, and offices across North York. More locations added regularly with live updates from our community and partners. 
+  <main class="exchange-page-wrapper locations-page-wrapper" style="flex: 1;">
+    <section class="exchange-page-hero mb-4">
+      <div class="news-breadcrumb mb-2">
+        <span>Location Desk</span>
+      </div>
+      <h1 class="news-title-main d-flex align-items-center justify-content-center gap-2 mb-3">
+        <i class="bi bi-geo-alt-fill" style="color: var(--color-brand);"></i>
+        <span>Crypto Locations Directory</span>
+      </h1>
+      <p class="exchange-page-subtitle">
+        Discover crypto-friendly locations around the world.
       </p>
+
+      <div class="metrics-row locations-summary-row" id="locationSummaryRow">
+        <div class="metric-card exchange-summary-card">
+          <div class="metric-label">Locations loaded</div>
+          <div class="metric-value" id="locationSummaryCount">--</div>
+          <div class="metric-sub" id="locationSummaryCountSub">Firestore records</div>
+        </div>
+        <div class="metric-card exchange-summary-card">
+          <div class="metric-label">Cities covered</div>
+          <div class="metric-value" id="locationSummaryCities">--</div>
+          <div class="metric-sub" id="locationSummaryCitiesSub">Unique cities</div>
+        </div>
+        <div class="metric-card exchange-summary-card">
+          <div class="metric-label">Open now</div>
+          <div class="metric-value" id="locationSummaryOpen">--</div>
+          <div class="metric-sub" id="locationSummaryOpenSub">Live status</div>
+        </div>
+        <div class="metric-card exchange-summary-card">
+          <div class="metric-label">Types tracked</div>
+          <div class="metric-value" id="locationSummaryTypes">--</div>
+          <div class="metric-sub" id="locationSummaryTypesSub">ATM, exchange, merchant, office</div>
+        </div>
+      </div>
     </section>
 
     <section class="table-wrap-card p-3 p-md-4">
@@ -150,7 +168,7 @@
 
       </div>
       <hr class="border-secondary" />
-      <p class="text-center small mb-0">&copy; 2025 CryptoDash. All rights reserved.</p>
+      <p class="text-center small mb-0">&copy; 2026 CryptoDash. All rights reserved.</p>
     </div>
   </footer>
 
@@ -406,6 +424,9 @@
       const safeRating = escapeHtml(location.rating || "N/A");
       const safeCity = escapeHtml(location.city);
       const safeCountry = escapeHtml(location.country);
+      const safeCoordinates = Number.isFinite(location.lat) && Number.isFinite(location.lng)
+        ? escapeHtml(location.lat.toFixed(4) + ", " + location.lng.toFixed(4))
+        : "";
       const statusLabel = location.status === "open" ? "Open" : "Closed";
       const statusClass = location.status === "open" ? "status-open" : "status-closed";
       const typeClass = "type-" + (location.type || "office");
@@ -428,6 +449,7 @@
             '<div class="location-meta-row"><span>Phone</span><strong>' + safePhone + '</strong></div>' +
             '<div class="location-meta-row"><span>Rating</span><strong>' + safeRating + '</strong></div>' +
             '<div class="location-meta-row"><span>Hours</span><strong>' + safeHours + '</strong></div>' +
+            (safeCoordinates ? '<div class="location-meta-row"><span>Coordinates</span><strong>' + safeCoordinates + '</strong></div>' : '') +
           '</div>' +
           '<div class="location-tags">' + tags + '</div>' +
           '<div class="location-actions">' +
@@ -448,6 +470,23 @@
       const suffix = hasMore ? " (scroll for more)" : "";
       locationCountInfo.textContent =
         "Showing " + renderedLocationCount + " of " + filteredLocations.length + " matching locations" + suffix;
+    }
+
+    function updateLocationSummary() {
+      const totalLocations = allLocations.length;
+      const citiesCovered = new Set(allLocations.map((location) => location.city)).size;
+      const openNow = allLocations.filter((location) => location.status === "open").length;
+      const typesTracked = new Set(allLocations.map((location) => location.type)).size;
+
+      const summaryCount = document.getElementById("locationSummaryCount");
+      const summaryCities = document.getElementById("locationSummaryCities");
+      const summaryOpen = document.getElementById("locationSummaryOpen");
+      const summaryTypes = document.getElementById("locationSummaryTypes");
+
+      if (summaryCount) summaryCount.textContent = String(totalLocations);
+      if (summaryCities) summaryCities.textContent = String(citiesCovered);
+      if (summaryOpen) summaryOpen.textContent = String(openNow);
+      if (summaryTypes) summaryTypes.textContent = String(typesTracked);
     }
 
     function appendNextLocationBatch() {
@@ -606,6 +645,7 @@
 
       renderCityOptions();
       applyFilters();
+      updateLocationSummary();
       bindEvents();
     }
 
