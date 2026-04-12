@@ -168,80 +168,25 @@
     }
 
     @media (max-width: 768px) {
-      body.advisor-page .top-nav {
-        padding: 10px 12px;
-        gap: 10px;
-        align-items: stretch;
-      }
-
-      body.advisor-page .top-nav-left,
-      body.advisor-page .top-nav-right {
-        width: 100%;
-        min-width: 0;
-        justify-content: space-between;
-      }
-
-      body.advisor-page .top-menu {
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-
-      body.advisor-page .top-menu a {
-        font-size: 0.78rem;
-      }
-
-      body.advisor-page .auth-entry-pill,
-      body.advisor-page .auth-user-pill,
-      body.advisor-page .ask-ai-pill {
-        padding: 6px 10px;
-        font-size: 0.74rem;
-      }
-
-      body.advisor-page .news-page-wrapper {
-        padding-top: 20px;
-        padding-bottom: 28px;
-      }
-
-      body.advisor-page .news-title-main {
-        flex-direction: column;
-        align-items: flex-start !important;
-        gap: 8px !important;
-        font-size: 1.45rem;
-        line-height: 1.2;
-      }
-
-      body.advisor-page .news-title-main i {
-        font-size: 1.05rem;
-      }
-
-      body.advisor-page .metric-card {
-        padding: 16px !important;
-      }
-
       body.advisor-page #advisor-form .row.g-4 {
         --bs-gutter-x: 0.9rem;
         --bs-gutter-y: 0.9rem;
       }
 
-      body.advisor-page .form-label {
-        font-size: 0.72rem;
+      body.advisor-page .metric-card {
+        padding: 12px 14px;
       }
 
-      body.advisor-page .risk-pill {
-        width: 100%;
-        min-height: 44px;
-        line-height: 1.2;
-        white-space: normal;
-      }
-
-      body.advisor-page .table-responsive {
+      body.advisor-page .table-wrap-card {
+        border-radius: var(--radius-md);
+        padding: 3px;
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;
       }
 
       body.advisor-page .table {
-        min-width: 620px;
-        font-size: 0.8rem;
+        min-width: 560px;
+        font-size: 0.85rem;
       }
 
       body.advisor-page .advisor-portfolio-card__header {
@@ -266,53 +211,12 @@
     }
 
     @media (max-width: 480px) {
-      body.advisor-page .top-nav {
-        padding: 10px;
-      }
-
-      body.advisor-page .top-nav-left,
-      body.advisor-page .top-nav-right {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 8px;
-      }
-
-      body.advisor-page .top-menu {
-        width: 100%;
-        justify-content: space-between;
-      }
-
-      body.advisor-page .top-menu a {
-        font-size: 0.72rem;
-        padding-bottom: 2px;
-      }
-
-      body.advisor-page .auth-entry-pill,
-      body.advisor-page .auth-user-pill,
-      body.advisor-page .ask-ai-pill {
-        width: 100%;
-        justify-content: center;
-      }
-
-      body.advisor-page .news-page-wrapper {
-        padding-top: 16px;
-        padding-bottom: 24px;
-      }
-
-      body.advisor-page .news-title-main {
-        font-size: 1.25rem;
-      }
-
       body.advisor-page .metric-card {
-        padding: 14px !important;
-      }
-
-      body.advisor-page .news-section-heading {
-        font-size: 1rem;
+        padding: 12px 12px;
       }
 
       body.advisor-page .table {
-        min-width: 540px;
+        min-width: 560px;
         font-size: 0.76rem;
       }
 
@@ -363,15 +267,17 @@
     </div>
   </header>
 
-  <main class="news-page-wrapper" style="flex: 1;">
-    <div class="news-breadcrumb">
+  <main class="exchange-page-wrapper" style="flex: 1;">
+    <section class="exchange-page-hero mb-4">
+      <div class="news-breadcrumb">
       <span>Ask AI</span>
-    </div>
-    <h1 class="news-title-main d-flex align-items-center gap-2">
-      <i class="bi bi-stars" style="color: var(--color-brand);"></i>
-      <span>AI Investment Advisor</span>
-    </h1>
-    <p class="text-secondary mb-4">Get personalized crypto portfolio recommendations powered by LSTM predictions</p>
+      </div>
+      <h1 class="news-title-main d-flex align-items-center gap-2 justify-content-center">
+        <i class="bi bi-stars" style="color: var(--color-brand);"></i>
+        <span>AI Investment Advisor</span>
+      </h1>
+      <p class="exchange-page-subtitle">Get personalized crypto portfolio recommendations powered by LSTM predictions</p>
+    </section>
 
     <section class="metric-card p-4 mb-4">
       <form id="advisor-form">
