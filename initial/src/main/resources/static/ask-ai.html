@@ -455,8 +455,13 @@
       const numCoinsValueEl = document.getElementById("num-coins-value");
       const marketStatusEl = document.getElementById("market-status");
       const marketTableBodyEl = document.getElementById("market-table-body");
+      const MARKET_OVERVIEW_RETRY_BASE_DELAY_MS = 8000;
+      const MARKET_OVERVIEW_RETRY_MAX_DELAY_MS = 30000;
+      const MARKET_OVERVIEW_MAX_RETRY_ATTEMPTS = 12;
       let marketOverviewLoaded = false;
       let marketOverviewRequestInFlight = false;
+      let marketOverviewRetryAttempts = 0;
+      let marketOverviewRetryTimerId = null;
 
       function toNumber(value, fallback) {
         const number = Number(value);
@@ -671,6 +676,61 @@
         marketStatusEl.className = "small text-secondary";
         marketStatusEl.style.color = "var(--color-text-secondary)";
         marketStatusEl.textContent = "";
+      }
+
+      function clearMarketOverviewRetryTimer() {
+        if (marketOverviewRetryTimerId !== null) {
+          window.clearTimeout(marketOverviewRetryTimerId);
+          marketOverviewRetryTimerId = null;
+        }
+      }
+
+      function resetMarketOverviewRetryState() {
+        marketOverviewRetryAttempts = 0;
+        clearMarketOverviewRetryTimer();
+      }
+
+      function scheduleMarketOverviewRetry() {
+        if (marketOverviewLoaded || marketOverviewRequestInFlight || document.visibilityState !== "visible") {
+          return;
+        }
+
+        if (marketOverviewRetryAttempts >= MARKET_OVERVIEW_MAX_RETRY_ATTEMPTS) {
+          setMarketStatus("AI service is still waking up. Keep this page open and try again in a moment.", "warning", false);
+          return;
+        }
+
+        clearMarketOverviewRetryTimer();
+
+        const delay = Math.min(
+          MARKET_OVERVIEW_RETRY_BASE_DELAY_MS + (marketOverviewRetryAttempts * 4000),
+          MARKET_OVERVIEW_RETRY_MAX_DELAY_MS
+        );
+
+        marketOverviewRetryTimerId = window.setTimeout(() => {
+          marketOverviewRetryTimerId = null;
+
+          if (document.visibilityState !== "visible" || marketOverviewLoaded || marketOverviewRequestInFlight) {
+            return;
+          }
+
+          marketOverviewRetryAttempts += 1;
+          loadMarketOverview();
+        }, delay);
+      }
+
+      function triggerMarketOverviewWarmup() {
+        if (marketOverviewLoaded || marketOverviewRequestInFlight) {
+          return;
+        }
+
+        clearMarketOverviewRetryTimer();
+        loadMarketOverview();
+      }
+
+      function shouldRetryMarketOverview(response, message) {
+        const lowerMessage = String(message || "").toLowerCase();
+        return response.status >= 500 || response.status === 429 || lowerMessage.includes("ai service unavailable");
       }
 
       function getAdvisorErrorMessage(payload, fallbackMessage) {
@@ -945,6 +1005,8 @@
         marketOverviewRequestInFlight = true;
         setMarketStatus("AI service is waking up, please wait up to 60 seconds...", "warning", true);
         marketTableBodyEl.innerHTML = "";
+        let retryRequested = false;
+        let retryStatusMessage = "";
 
         try {
           const response = await fetch("/api/prediction/all", {
@@ -958,8 +1020,9 @@
 
           if (!response.ok) {
             const message = getAdvisorErrorMessage(payload, "Could not load market overview.");
-            if (response.status === 503 && message.toLowerCase().includes("ai service unavailable")) {
-              setMarketStatus("AI service is waking up, please wait up to 60 seconds...", "warning", false);
+            if (shouldRetryMarketOverview(response, message)) {
+              retryRequested = true;
+              retryStatusMessage = "AI service is waking up, retrying automatically...";
             } else {
               setMarketStatus(message, "danger", false);
             }
@@ -973,20 +1036,27 @@
             .sort((left, right) => right.growthPercent - left.growthPercent);
 
           renderMarketTable(coins);
+          resetMarketOverviewRetryState();
           clearMarketStatus();
           marketOverviewLoaded = true;
         } catch (error) {
-          setMarketStatus("Could not load market overview. Please try again.", "danger", false);
+          retryRequested = true;
+          retryStatusMessage = "AI service is waking up, retrying automatically...";
           renderMarketTable([]);
           marketOverviewLoaded = false;
         } finally {
           marketOverviewRequestInFlight = false;
+
+          if (retryRequested) {
+            setMarketStatus(retryStatusMessage, "warning", false);
+            scheduleMarketOverviewRetry();
+          }
         }
       }
 
       function refreshMarketOverviewIfNeeded() {
         if (document.visibilityState === "visible" && !marketOverviewLoaded && !marketOverviewRequestInFlight) {
-          loadMarketOverview();
+          triggerMarketOverviewWarmup();
         }
       }
 
@@ -1083,15 +1153,21 @@
       window.addEventListener("pageshow", (event) => {
         if (event.persisted) {
           marketOverviewLoaded = false;
-          refreshMarketOverviewIfNeeded();
         }
+        refreshMarketOverviewIfNeeded();
       });
       window.addEventListener("focus", refreshMarketOverviewIfNeeded);
-      document.addEventListener("visibilitychange", refreshMarketOverviewIfNeeded);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          refreshMarketOverviewIfNeeded();
+        } else {
+          clearMarketOverviewRetryTimer();
+        }
+      });
 
       updateRiskButtonStyles();
       updateSliderValue();
-      loadMarketOverview();
+      triggerMarketOverviewWarmup();
     })();
   </script>
 </body>
