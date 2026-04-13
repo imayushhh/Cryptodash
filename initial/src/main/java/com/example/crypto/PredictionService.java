@@ -2,16 +2,19 @@ package com.example.crypto;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.netty.channel.ChannelOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientRequestException;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
@@ -24,7 +27,8 @@ public class PredictionService {
 
     private static final Logger log = LoggerFactory.getLogger(PredictionService.class);
     private static final String DEFAULT_AI_SERVICE_URL = "https://cryptodash-ai.onrender.com";
-    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(90);
+    // Render free tier cold starts can take up to 120s — keep the connection alive for 150s
+    private static final Duration REQUEST_TIMEOUT = Duration.ofSeconds(150);
     private static final Duration RETRY_BACKOFF = Duration.ofSeconds(5);
     private static final int RETRY_ATTEMPTS = 3;
 
@@ -36,8 +40,17 @@ public class PredictionService {
                              @Value("${ai.service.url:https://cryptodash-ai.onrender.com}") String aiServiceUrl) {
         String baseUrl = normalizeBaseUrl(aiServiceUrl);
 
+        // Configure Netty HttpClient with an explicit responseTimeout so the underlying
+        // TCP connection stays open long enough for Render's cold start to complete.
+        // Without this, the default connector may close the connection before the
+        // reactive .timeout() fires, causing Render to abort its boot.
+        HttpClient httpClient = HttpClient.create()
+                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 10_000)
+                .responseTimeout(REQUEST_TIMEOUT);
+
         this.webClient = webClientBuilder
                 .baseUrl(baseUrl)
+                .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .defaultHeader(HttpHeaders.ACCEPT, MediaType.APPLICATION_JSON_VALUE)
                 .build();
         this.objectMapper = objectMapper;
