@@ -329,6 +329,11 @@ select:focus-visible {
 /* ===============================
    TOP HEADER & TABS (SHARED)
 =============================== */
+header {
+  position: relative;
+  z-index: 100;
+}
+
 .top-nav {
   background-color: rgba(11, 14, 19, 0.85);
   backdrop-filter: blur(14px);
