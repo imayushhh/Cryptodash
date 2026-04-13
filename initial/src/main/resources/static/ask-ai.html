@@ -267,6 +267,12 @@
     </div>
   </header>
 
+  <div class="tagline-wrapper">
+    <div class="tagline-inner">
+      <span class="moving-text">Ask It. Plan It. Own It.</span>
+    </div>
+  </div>
+
   <main class="exchange-page-wrapper" style="flex: 1;">
     <section class="exchange-page-hero mb-4">
       <div class="news-breadcrumb">
@@ -430,6 +436,7 @@
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <!-- Shared global market cap logic (no-op if card not present) -->
   <script src="global-metrics.js"></script>
+  <script src="tagline.js"></script>
   <script type="module" src="auth-nav.js"></script>
   <script>
     (function () {
@@ -448,6 +455,8 @@
       const numCoinsValueEl = document.getElementById("num-coins-value");
       const marketStatusEl = document.getElementById("market-status");
       const marketTableBodyEl = document.getElementById("market-table-body");
+      let marketOverviewLoaded = false;
+      let marketOverviewRequestInFlight = false;
 
       function toNumber(value, fallback) {
         const number = Number(value);
@@ -929,6 +938,11 @@
       }
 
       async function loadMarketOverview() {
+        if (marketOverviewRequestInFlight) {
+          return;
+        }
+
+        marketOverviewRequestInFlight = true;
         setMarketStatus("AI service is waking up, please wait up to 60 seconds...", "warning", true);
         marketTableBodyEl.innerHTML = "";
 
@@ -936,7 +950,8 @@
           const response = await fetch("/api/prediction/all", {
             headers: {
               Accept: "application/json"
-            }
+            },
+            cache: "no-store"
           });
 
           const payload = await response.json().catch(() => ({}));
@@ -949,6 +964,7 @@
               setMarketStatus(message, "danger", false);
             }
             renderMarketTable([]);
+            marketOverviewLoaded = false;
             return;
           }
 
@@ -958,9 +974,19 @@
 
           renderMarketTable(coins);
           clearMarketStatus();
+          marketOverviewLoaded = true;
         } catch (error) {
           setMarketStatus("Could not load market overview. Please try again.", "danger", false);
           renderMarketTable([]);
+          marketOverviewLoaded = false;
+        } finally {
+          marketOverviewRequestInFlight = false;
+        }
+      }
+
+      function refreshMarketOverviewIfNeeded() {
+        if (document.visibilityState === "visible" && !marketOverviewLoaded && !marketOverviewRequestInFlight) {
+          loadMarketOverview();
         }
       }
 
@@ -1054,6 +1080,14 @@
 
       numCoinsInput.addEventListener("input", updateSliderValue);
       advisorForm.addEventListener("submit", submitAdvisorRequest);
+      window.addEventListener("pageshow", (event) => {
+        if (event.persisted) {
+          marketOverviewLoaded = false;
+          refreshMarketOverviewIfNeeded();
+        }
+      });
+      window.addEventListener("focus", refreshMarketOverviewIfNeeded);
+      document.addEventListener("visibilitychange", refreshMarketOverviewIfNeeded);
 
       updateRiskButtonStyles();
       updateSliderValue();

@@ -578,7 +578,8 @@ select:focus-visible {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-brand);
-  animation: ticker 18s linear infinite;
+  animation: ticker var(--tagline-duration, 18s) linear infinite;
+  will-change: transform;
 }
 
 @keyframes ticker {
