@@ -5,8 +5,10 @@ RAM usage: ~50MB (no TensorFlow needed)
 """
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from contextlib import contextmanager
 import psycopg2
 import psycopg2.extras
+from psycopg2.pool import ThreadedConnectionPool
 import os
 import json
 from datetime import datetime, date, timedelta
@@ -16,26 +18,43 @@ CORS(app)
 
 DB_URL = os.environ.get("DATABASE_URL", "")
 
+pool = None
+if DB_URL:
+    pool = ThreadedConnectionPool(minconn=1, maxconn=5, dsn=DB_URL, sslmode="require")
+
 COIN_RISK_TIERS = {}
 COIN_SYMBOLS    = {}
 COIN_NAMES      = {}
 
-def get_conn():
-    return psycopg2.connect(DB_URL, sslmode="require")
+@contextmanager
+def get_db_conn():
+    conn = None
+    if pool is None:
+        conn = psycopg2.connect(DB_URL, sslmode="require")
+        try:
+            yield conn
+        finally:
+            conn.close()
+        return
+
+    conn = pool.getconn()
+    try:
+        yield conn
+    finally:
+        pool.putconn(conn)
 
 def load_coin_metadata():
     global COIN_RISK_TIERS, COIN_SYMBOLS, COIN_NAMES
     if not DB_URL:
         return
     try:
-        conn = get_conn()
-        with conn.cursor() as cur:
-            cur.execute("SELECT coin_id, symbol, name, risk_tier FROM coins WHERE is_active = TRUE")
-            for coin_id, symbol, name, risk_tier in cur.fetchall():
-                COIN_RISK_TIERS[coin_id] = risk_tier
-                COIN_SYMBOLS[coin_id]    = symbol
-                COIN_NAMES[coin_id]      = name
-        conn.close()
+        with get_db_conn() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT coin_id, symbol, name, risk_tier FROM coins WHERE is_active = TRUE")
+                for coin_id, symbol, name, risk_tier in cur.fetchall():
+                    COIN_RISK_TIERS[coin_id] = risk_tier
+                    COIN_SYMBOLS[coin_id]    = symbol
+                    COIN_NAMES[coin_id]      = name
         print(f"Loaded metadata for {len(COIN_SYMBOLS)} coins")
     except Exception as e:
         print(f"Warning: Could not load coin metadata: {e}")
@@ -103,16 +122,15 @@ def predict_coin(coin_id):
         return jsonify({"error": "Database not configured"}), 500
 
     try:
-        conn = get_conn()
-        rows = get_latest_prediction(coin_id, conn)
+        with get_db_conn() as conn:
+            rows = get_latest_prediction(coin_id, conn)
 
-        if not rows:
-            return jsonify({
-                "error": f"No predictions found for {coin_id}. Trainer may not have run yet."
-            }), 404
+            if not rows:
+                return jsonify({
+                    "error": f"No predictions found for {coin_id}. Trainer may not have run yet."
+                }), 404
 
-        indicators = get_latest_indicators(coin_id, conn)
-        conn.close()
+            indicators = get_latest_indicators(coin_id, conn)
 
         # Build forecast list from rows
         forecast = []
@@ -153,19 +171,18 @@ def predict_all():
         return jsonify({"error": "Database not configured"}), 500
 
     try:
-        conn = get_conn()
-        sql  = """
-            SELECT DISTINCT ON (coin_id)
-                coin_id, current_price, predicted_price,
-                growth_percent, signal, advice, predicted_at
-            FROM predictions
-            WHERE predicted_at >= NOW() - INTERVAL '2 days'
-            ORDER BY coin_id, predicted_at DESC
-        """
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql)
-            rows = cur.fetchall()
-        conn.close()
+        with get_db_conn() as conn:
+            sql  = """
+                SELECT DISTINCT ON (coin_id)
+                    coin_id, current_price, predicted_price,
+                    growth_percent, signal, advice, predicted_at
+                FROM predictions
+                WHERE predicted_at >= NOW() - INTERVAL '2 days'
+                ORDER BY coin_id, predicted_at DESC
+            """
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute(sql)
+                rows = cur.fetchall()
 
         results = []
         for row in rows:
@@ -204,22 +221,21 @@ def advisor():
         return jsonify({"error": "Risk must be low, medium, or high"}), 400
 
     try:
-        conn = get_conn()
-        sql  = """
-            SELECT DISTINCT ON (p.coin_id)
-                p.coin_id, p.current_price, p.predicted_price,
-                p.growth_percent, p.signal, p.advice,
-                c.symbol, c.name, c.risk_tier
-            FROM predictions p
-            JOIN coins c ON p.coin_id = c.coin_id
-            WHERE p.predicted_at >= NOW() - INTERVAL '2 days'
-              AND c.is_active = TRUE
-            ORDER BY p.coin_id, p.predicted_at DESC
-        """
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql)
-            all_preds = cur.fetchall()
-        conn.close()
+        with get_db_conn() as conn:
+            sql  = """
+                SELECT DISTINCT ON (p.coin_id)
+                    p.coin_id, p.current_price, p.predicted_price,
+                    p.growth_percent, p.signal, p.advice,
+                    c.symbol, c.name, c.risk_tier
+                FROM predictions p
+                JOIN coins c ON p.coin_id = c.coin_id
+                WHERE p.predicted_at >= NOW() - INTERVAL '2 days'
+                  AND c.is_active = TRUE
+                ORDER BY p.coin_id, p.predicted_at DESC
+            """
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute(sql)
+                all_preds = cur.fetchall()
 
         # Filter by risk
         def allowed(coin_tier, user_risk):
